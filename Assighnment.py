@@ -1,8 +1,5 @@
 import sqlite3
-from helpers import callable_dict
-import pprint
 import tkinter as  tk
-caller = callable_dict()
 
 class CommandCanceled (Exception):
     pass
@@ -12,55 +9,27 @@ def exitable_input(prompt):
     if result.lower() =="quit":
         raise CommandCanceled()
     return result
+
 class UserInterface:
     def __init__(self) -> None:
         self.database = DataBase()
-        #self.commands = {"add_book":self.database.add_book, "update_quantity":self.database.update_quantity, "delete": self.database.delete, "update_description":self.database.update_description,"check_status":self.database.check_status, "read":self.database.read}
-    def parse(self,raw_command:str):
-        "parses a string into a command and its arguments, if an error is through returns 'error' and command and the message in args"
-        command_sections = raw_command.split()
-        if len(command_sections) == 0:
-            return "error", "please enter a command"
-        if command_sections[0] not in caller.cmds.keys():
-            return "error", "not recognised command"
-        if command_sections[0].lower() == "add_author":
-            command_sections = command_sections[0], " ".join(command_sections[1:])
-        if command_sections[0].lower() == "update_description":
-            if len(command_sections) < 4:
-                return "error", "not enough arguments"
-            command_sections = command_sections[0], command_sections[1], command_sections[2], " ".join(command_sections[3:])
-        if command_sections[0].lower() == "add_filter":
-            if len(command_sections) < 2:
-                return "error", "not enough arguments"
-            command_sections = command_sections[0], command_sections[1], " ".join(command_sections[2:])
-        if command_sections[0].lower() == "remove_filter":
-            if len(command_sections) < 2:
-                return "error", "not enough arguments"
-        if command_sections[0].lower() == "remove_ordering":
-            if len(command_sections) < 2:
-                return "error", "not enough arguments"
-            command_sections[1] = int(command_sections[1])
-        return command_sections[0], command_sections[1:]
-    def mainloop(self):
-        while True:
-            user_input = input("Command: ")
-            if user_input.lower()== "quit":
-                break
-            command, args = self.parse(user_input)
-            if command == "error":
-                print (args)
-            else:
-                try:
-                    if (x := caller.cmds[command](self.database,*args)) is not None:
-                        if isinstance(x,list):
-                            pprint.pprint(x)
-                        else:
-                            print (x)
-                    else:
-                        print ("Command competed successfully")
-                except Exception as e:
-                    print (e)
-    @caller.add()
+        self.root = tk.Tk()
+        self.root.columnconfigure(0,weight=1)
+        self.root.rowconfigure(0,weight=1)
+        self.outputbox = tk.Frame(self.root)
+        self.outputbox.grid(sticky="NSEW")
+        self.update_output()
+        self.root.mainloop()
+    def update_output(self):
+        data = self.database.read()
+        lenght = len(data)
+        for row, book in enumerate(data):
+            for column, value in enumerate(book.values()):
+                entry = tk.Entry(self.outputbox,background="pink")
+                entry.grid(row=row,column=column)
+                entry.insert(tk.END,str(value)) 
+        
+
     def add_book(self):
         book = {}
         print("adding book, type quit to cancel")
@@ -71,11 +40,7 @@ class UserInterface:
         book["author_ID"] = exitable_input("author_ID :")
         self.add_book(book)
 
-class GUI:
-    def __init__(self):
-        self.root = tk.Tk()
-        inputbar = tk.Entry(self.root)
-        
+
 class DataBase:
     def __init__(self) -> None:
         self.con = sqlite3.connect("database.db")
@@ -87,35 +52,30 @@ class DataBase:
     def add_book (self,book): # not added to caller as the user cant pass in dicts
         #book = {"name":"peter pan","ISBN_num": "37872","date":"yesterday","description":"it exists","author_ID":1}
         self.cur.execute("INSERT INTO books (name,ISBN_num,date,description,author_ID) VALUES(:name, :ISBN_num,:date,:description,:author_ID)",book)
-        self.con.commit()
-    @caller.add()
-    def help(self):
-        pprint.pprint(caller.cmds.keys())
-    @caller.add()
+
     def add_author (self,author_name):
         self.cur.execute("INSERT INTO authors (author_name) VALUES(?)",(author_name,))
         self.con.commit()
         return f"Author added with id {self.cur.lastrowid}"
-    @caller.add(alias = "update_quantity")
     def update_stock(self, book_ID, quantity):
         self.cur.execute("DELETE FROM stock WHERE book_ID = ?", (book_ID,))
         self.cur.execute("INSERT INTO stock (book_ID, quantity) VALUES (?, ?)",(book_ID,quantity))
         self.con.commit()
-    @caller.add()
     def delete_author (self,author_ID):
         self.cur.execute("DELETE FROM authors WHERE author_ID = ?", (author_ID,))
         self.con.commit()
-    @caller.add()
+
     def delete_book (self,book_ID):
         self.cur.execute("DELETE FROM books WHERE book_ID = ?", (book_ID,))
+    def commit(self):
         self.con.commit()
-    @caller.add()
+
     def update_description(self,book_ID,column,new_description):
         if column not in {"name","ISBN_num","date","description","author_ID"}:# this counts as sqlinjection safe i guess
             return "Please enter a valid column name" 
         self.cur.execute(f"UPDATE books SET {column} = ? WHERE book_ID = ?",(new_description,book_ID))
         self.con.commit()
-    @caller.add(alias = "show_status")
+
     def check_status(self):
         filtersql,values = self.generate_filters()
         self.cur.execute(f"""SELECT books.name,
@@ -132,7 +92,7 @@ ON books.book_ID = stock.book_ID
             for row in result_lists
         ]
         return results
-    @caller.add(alias = "show")
+
     def read(self):
         #self.cur.execute("SELECT * FROM authors")
         filtersql,values = self.generate_filters()
@@ -152,7 +112,7 @@ JOIN authors ON books.author_ID = authors.author_ID
             for row in result_lists
             ]
         return results
-    @caller.add()
+
     def add_filter(self,filter,value):
         if filter in {"book_ID","name","ISBN_num","date","description","author_ID"}:# this counts as sqlinjection safe i guess
             filter = "books."+filter
@@ -161,10 +121,10 @@ JOIN authors ON books.author_ID = authors.author_ID
         else:
             return "Please enter a valid column name"
         self.filters.append((filter,value))
-    @caller.add()
+
     def remove_filter(self,index):
         self.filters.pop(index)
-    @caller.add()
+
     def add_ordering(self,column,direction = "asc"):
         if column in {"book_ID","name","ISBN_num","date","description","author_ID"}:# this counts as sqlinjection safe i guess
             column = "books."+column
@@ -177,10 +137,10 @@ JOIN authors ON books.author_ID = authors.author_ID
         if direction.lower() not in {"asc", "desc"}:
             return "Please enter a valid sorting system" 
         self.orderings.append (column + " " +direction)
-    @caller.add()
+
     def remove_ordering(self,index):
         self.orderings.pop(index)
-    @caller.add()
+
     def show_authors(self):
         self.cur.execute("SELECT * FROM authors")
         return self.cur.fetchall()
@@ -190,7 +150,7 @@ JOIN authors ON books.author_ID = authors.author_ID
     def generate_orderings(self):
         filters = ", ".join(self.orderings)
         return " ORDER BY " + filters if filters else ""
-    @caller.add()
+
     def create_database(self):
         self.cur.execute("""CREATE TABLE authors(
   author_ID    INTEGER PRIMARY KEY, 
@@ -212,5 +172,9 @@ FOREIGN KEY(book_ID) REFERENCES books(book_ID) ON DELETE CASCADE
  )""")
 if __name__ == "__main__":
     #d = DataBase()
-    #d.create_database()
-    UserInterface().mainloop()
+    #book = {"name":"peter pan","ISBN_num": "37872","date":"yesterday","description":"it exists","author_ID":1}
+    #for i in range (10000,20000):
+    #     d.delete_book(i)
+        #d.add_book(book)
+    #d.commit()
+    UserInterface()
