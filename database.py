@@ -1,45 +1,4 @@
-import sqlite3
-import tkinter as  tk
-
-class CommandCanceled (Exception):
-    pass
-
-def exitable_input(prompt):
-    result = input(prompt)
-    if result.lower() =="quit":
-        raise CommandCanceled()
-    return result
-
-class UserInterface:
-    def __init__(self) -> None:
-        self.database = DataBase()
-        self.root = tk.Tk()
-        self.root.columnconfigure(0,weight=1)
-        self.root.rowconfigure(0,weight=1)
-        self.outputbox = tk.Frame(self.root)
-        self.outputbox.grid(sticky="NSEW")
-        self.update_output()
-        self.root.mainloop()
-    def update_output(self):
-        data = self.database.read()
-        lenght = len(data)
-        for row, book in enumerate(data):
-            for column, value in enumerate(book.values()):
-                entry = tk.Entry(self.outputbox,background="pink")
-                entry.grid(row=row,column=column)
-                entry.insert(tk.END,str(value)) 
-        
-
-    def add_book(self):
-        book = {}
-        print("adding book, type quit to cancel")
-        book["name"] = exitable_input ("Name :")
-        book["ISBN_num"] = exitable_input("ISBN_number(leave blank if there is none) :") or None
-        book["date"] = exitable_input("Date :")
-        book["description"] = exitable_input("Description :")
-        book["author_ID"] = exitable_input("author_ID :")
-        self.add_book(book)
-
+import sqlite3        
 
 class DataBase:
     def __init__(self) -> None:
@@ -50,7 +9,8 @@ class DataBase:
         self.orderings = []
     
     def add_book (self,book): # not added to caller as the user cant pass in dicts
-        #book = {"name":"peter pan","ISBN_num": "37872","date":"yesterday","description":"it exists","author_ID":1}
+        #book = {"name":"peter pan","ISBN_num": "37872","date":"yesterday","de
+        # scription":"it exists","author_ID":1}
         self.cur.execute("INSERT INTO books (name,ISBN_num,date,description,author_ID) VALUES(:name, :ISBN_num,:date,:description,:author_ID)",book)
 
     def add_author (self,author_name):
@@ -70,7 +30,7 @@ class DataBase:
     def commit(self):
         self.con.commit()
 
-    def update_description(self,book_ID,column,new_description):
+    def update_description(self,book_ID:int,column:str,new_description:str):
         if column not in {"name","ISBN_num","date","description","author_ID"}:# this counts as sqlinjection safe i guess
             return "Please enter a valid column name" 
         self.cur.execute(f"UPDATE books SET {column} = ? WHERE book_ID = ?",(new_description,book_ID))
@@ -170,11 +130,4 @@ book_ID INTEGER NOT NULL,
 quantity INTEGER NOT NULL,
 FOREIGN KEY(book_ID) REFERENCES books(book_ID) ON DELETE CASCADE
  )""")
-if __name__ == "__main__":
-    #d = DataBase()
-    #book = {"name":"peter pan","ISBN_num": "37872","date":"yesterday","description":"it exists","author_ID":1}
-    #for i in range (10000,20000):
-    #     d.delete_book(i)
-        #d.add_book(book)
-    #d.commit()
-    UserInterface()
+
