@@ -17,6 +17,9 @@ class DataBase:
         self.cur.execute("INSERT INTO authors (author_name) VALUES(?)",(author_name,))
         self.con.commit()
         return f"Author added with id {self.cur.lastrowid}"
+    def update_author(self,author_ID:int,author_name:str):
+        self.cur.execute(f"UPDATE authors SET author_name = ? WHERE book_ID = ?",(author_name,author_ID))
+        self.con.commit()
     def update_stock(self, book_ID, quantity):
         self.cur.execute("DELETE FROM stock WHERE book_ID = ?", (book_ID,))
         self.cur.execute("INSERT INTO stock (book_ID, quantity) VALUES (?, ?)",(book_ID,quantity))
