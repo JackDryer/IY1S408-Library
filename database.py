@@ -32,7 +32,7 @@ class DataBase:
 
     def update_description(self,book_ID:int,column:str,new_description:str):
         if column not in {"name","ISBN_num","date","description","author_ID"}:# this counts as sqlinjection safe i guess
-            return "Please enter a valid column name" 
+            raise Exception( "Please enter a valid column name") 
         self.cur.execute(f"UPDATE books SET {column} = ? WHERE book_ID = ?",(new_description,book_ID))
         self.con.commit()
 
@@ -79,7 +79,7 @@ JOIN authors ON books.author_ID = authors.author_ID
         elif filter in {"author_name"}:
             filter = "authors."+filter
         else:
-            return "Please enter a valid column name"
+            raise Exception("Please enter a valid column name")
         self.filters.append((filter,value))
 
     def remove_filter(self,index):
@@ -93,9 +93,9 @@ JOIN authors ON books.author_ID = authors.author_ID
         elif column in {"quantity"}:
             column = "stock."+column
         else:
-            return "Please enter a valid column name"
+            raise Exception( "Please enter a valid column name")
         if direction.lower() not in {"asc", "desc"}:
-            return "Please enter a valid sorting system" 
+            raise Exception("Please enter a valid sorting system") 
         self.orderings.append (column + " " +direction)
 
     def remove_ordering(self,index):
