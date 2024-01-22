@@ -54,7 +54,6 @@ class Book:
         authorbox.config(activebackground=colour_scheme["highlightbackground"],highlightthickness=0,pady=0,**new_colour_scheme)
         new_colour_scheme.pop("highlightbackground")
         new_colour_scheme.pop("highlightcolor")
-        print(type(authorbox["menu"]))
         authorbox["menu"].config(activebackground=colour_scheme["highlightbackground"],activeforeground=colour_scheme["highlightcolor"],borderwidth=0,activeborderwidth = 0,**new_colour_scheme)
         authorbox.grid(row=row,column=x+1,sticky= "NSEW")
 
