@@ -7,7 +7,7 @@ AUTHOR_FIELDS :Final[Tuple[str]] = ("author_ID","author_name")
 
 BOOKS_TABLE :Final[str] = "books"
 BOOKS_FIELDS :Final[Tuple[str]] = ("book_ID", "name","ISBN_num","date","description","author_ID")
-BOOK_FEILD :Final[Enum] = Enum("BOOK_FEILD",BOOKS_FIELDS)
+BOOK_FIELD :Final[Enum] = Enum("BOOK_FEILD",BOOKS_FIELDS)
 
 STOCK_TABLE :Final[str] = "stock"
 STOCK_FIELDS :Final[Tuple[str]] = ("book_ID","quantity")
