@@ -1,4 +1,16 @@
 import sqlite3        
+from typing import Final,Tuple
+from enum import Enum
+
+AUTHOR_TABLE :Final[str] = "authors"
+AUTHOR_FIELDS :Final[Tuple[str]] = ("author_ID","author_name")
+
+BOOKS_TABLE :Final[str] = "books"
+BOOKS_FIELDS :Final[Tuple[str]] = ("book_ID", "name","ISBN_num","date","description","author_ID")
+BOOK_FEILD :Final[Enum] = Enum("BOOK_FEILD",BOOKS_FIELDS)
+
+STOCK_TABLE :Final[str] = "stock"
+STOCK_FIELDS :Final[Tuple[str]] = ("book_ID","quantity")
 
 class DataBase:
     def __init__(self) -> None:

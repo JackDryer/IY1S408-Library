@@ -1,4 +1,4 @@
-from database import DataBase
+import database
 import tkinter as  tk
 colour_scheme = {
     "bg": "#010740",
@@ -14,7 +14,7 @@ highlight_colour_scheme = {
 
 class UserInterface:
     def __init__(self) -> None:
-        self.database = DataBase()
+        self.database = database.DataBase()
         self.root = tk.Tk()
         self.root.columnconfigure(0,weight=1)
         self.root.rowconfigure(0,weight=1)
@@ -38,17 +38,20 @@ class BookList:
             self.displayed_books.append(Book(self.frame,row,book,self.update_func))
             
 class Book:
-    def __init__(self,master,row,book,database):
+    book_feilds = database.BOOKS_FIELDS[1:-1]
+    author_feild = database.AUTHOR_FIELDS[1]
+    stock_feild = database.STOCK_FIELDS[1]
+    def __init__(self,master,row,book,databaseObject):
         self.master = master
         self.row = row
         self.book = book
-        self.database = database
-        self.ID = book["book_ID"]
-        for x, i in enumerate(["name","ISBN_num","date","description","quantity"]):
+        self.database = databaseObject
+        self.ID = book[database.BOOK_FEILD.book_ID.name]
+        for x, i in enumerate(self.book_feilds + (self.stock_feild,)):
             self.add_element(x,i)
         author = tk.StringVar(master)
         author.set(book["author_name"])
-        authorbox = tk.OptionMenu(master,author,*[i[1] for i in database.show_authors()])
+        authorbox = tk.OptionMenu(master,author,*[i[1] for i in self.database.show_authors()])
         new_colour_scheme = colour_scheme.copy()
         new_colour_scheme.pop("insertbackground")
         authorbox.config(activebackground=colour_scheme["highlightbackground"],highlightthickness=0,pady=0,**new_colour_scheme)
@@ -68,7 +71,6 @@ class Book:
         entry.configure(**colour_scheme)
         self.database.update_description(self.ID,entry.column_name,entry.get())
 
-        
 
 
 
