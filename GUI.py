@@ -62,38 +62,53 @@ class Book:
     book_fields = database.BOOKS_FIELDS[1:-1]
     author_feild = database.AUTHOR_FIELDS[1]
     stock_field = database.STOCK_FIELDS[1]
-    def __init__(self,master,row,book,databaseObject):
+    def __init__(self,master:tk.Frame,row,book,databaseObject:database.DataBase):
         self.master = master
         self.row = row
         self.book = book
         self.database = databaseObject
         self.entries= []
         self.ID = book["book_ID"]
-        for x, i in enumerate(self.book_fields + (self.stock_field,)):
-            self.add_element(x,i)
-        author = tk.StringVar(master)
-        author.set(book["author_name"])
-        authorbox = tk.OptionMenu(master,author,*[i[1] for i in self.database.show_authors()])
-        configure_colours(authorbox,colour_scheme)
-        self.entries.append(authorbox)
-        authorbox.grid(row=row,column=x+1,sticky= "NSEW")
-
-    def add_element(self,column,column_name):
-        entry = tk.Entry(self.master,**colour_scheme)
-        entry.grid(row=self.row,column=column,sticky="NSEW")
+        temp = [self.create_element(i) for i in self.book_fields]
+        stock = self.create_element(self.stock_field)
+        vcmd = (self.master.register(lambda x: x.isdigit() or x ==""))
+        stock.configure(validate="all",validatecommand=(vcmd, '%P'))
+        self.author = tk.StringVar(master)
+        self.author.set(book["author_name"])
+        self.author_dictionary = {i[1]:i[0] for i in self.database.show_authors()}
+        authorbox = tk.OptionMenu(master,self.author,*self.author_dictionary.keys())
+        authorbox.column_name = self.author_feild
+        for x, i in enumerate(temp):
+            self.config_element(i,x)
+        self.config_element(stock,x+1)
+        self.config_element(authorbox,x+2)
+        self.author.trace_add("write",self.set_author)
+    def create_element(self,column_name) ->tk.Entry:
+        entry = tk.Entry(self.master)
         entry.insert(tk.END,str(self.book[column_name]))
         entry.column_name = column_name # this is deffinatly not a good idea, should use inheritance, but it doesn't change the funtionality.
-        entry.bind("<FocusOut>",lambda x: self.leave_entry(entry))
-        entry.bind("<FocusIn>", lambda x: self.enter_entry(entry))
-        self.entries.append(entry)
+        return entry
+    def config_element(self,element,column):
+        configure_colours(element,colour_scheme)
+        element.grid(row=self.row,column=column,sticky="NSEW")
+        element.bind("<FocusOut>",lambda x: self.leave_entry(element))
+        element.bind("<FocusIn>", lambda x: self.enter_entry(element))
+        self.entries.append(element)
     def leave_entry(self,entry:tk.Entry):
         for i in self.entries:
             configure_colours(i,colour_scheme)
-        self.database.update_description(self.ID,entry.column_name,entry.get())
+        if entry.column_name == self.author_feild:
+            pass
+        elif entry.column_name ==self.stock_field:
+            self.database.update_stock(self.ID,int(entry.get()))
+        else:
+            self.database.update_description(self.ID,entry.column_name,entry.get())
     def enter_entry(self,entry):
         for i in self.entries:
             configure_colours(i,highlight_colour_scheme)
-        entry.configure(**select_colour_scheme)
+            entry.configure(**select_colour_scheme)
+    def set_author(self,irreleventvalue,irreleventvalue2,irreleventvalue3):
+        self.database.update_description(self.ID,"author_ID",self.author_dictionary[self.author.get()])
 
 
 if __name__ == "__main__":
