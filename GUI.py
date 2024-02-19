@@ -22,7 +22,14 @@ select_colour_scheme = {
 }
 
 def configure_colours(element,colour_scheme):
-    if isinstance(element,tk.OptionMenu): # im sad
+    if isinstance(element,tk.Label):
+        new_colour_scheme = colour_scheme.copy()
+        if "insertbackground" in colour_scheme:
+            new_colour_scheme.pop("insertbackground")
+        element.config(activebackground=colour_scheme["highlightbackground"],highlightthickness=0,pady=0,**new_colour_scheme)
+        new_colour_scheme.pop("highlightbackground")
+        new_colour_scheme.pop("highlightcolor")
+    elif isinstance(element,(tk.OptionMenu)): # im sad
         new_colour_scheme = colour_scheme.copy()
         if "insertbackground" in colour_scheme:
             new_colour_scheme.pop("insertbackground")
@@ -47,16 +54,27 @@ class UserInterface:
 class BookList:
     def __init__(self,master,database):
         self.frame = tk.Frame(master)
+        for i in range(6):
+            self.frame.columnconfigure(i,weight=1)
+        self.create_headings()
         self.frame.grid(sticky="NSEW")
         self.displayed_books= []
         self.update_func = database
+    def create_headings(self):
+        for i,name in enumerate(Book.book_fields+(Book.stock_field,Book.author_feild)):
+            border = tk.Frame(self.frame,background="white")
+            border.grid_columnconfigure(0,weight=1)
+            label = tk.Label (border,text=name[0].upper()+name[1:])
+            configure_colours(label,highlight_colour_scheme)
+            label.grid(sticky="NSEW",padx=1,pady=1)
+            border.grid(row=0,column=i,sticky="NSEW")
     def set_output(self,data):
         self.data = data
         self.update_output()
     def update_output(self):
-        lenght = len(self.data)
+        length = len(self.data)
         for row, book in enumerate(self.data):
-            self.displayed_books.append(Book(self.frame,row,book,self.update_func))
+            self.displayed_books.append(Book(self.frame,row+1,book,self.update_func))
             
 class Book:
     book_fields = database.BOOKS_FIELDS[1:-1]
@@ -83,17 +101,20 @@ class Book:
         self.config_element(stock,x+1)
         self.config_element(authorbox,x+2)
         self.author.trace_add("write",self.set_author)
+
     def create_element(self,column_name) ->tk.Entry:
         entry = tk.Entry(self.master)
         entry.insert(tk.END,str(self.book[column_name]))
         entry.column_name = column_name # this is deffinatly not a good idea, should use inheritance, but it doesn't change the funtionality.
         return entry
+
     def config_element(self,element,column):
         configure_colours(element,colour_scheme)
         element.grid(row=self.row,column=column,sticky="NSEW")
         element.bind("<FocusOut>",lambda x: self.leave_entry(element))
         element.bind("<FocusIn>", lambda x: self.enter_entry(element))
         self.entries.append(element)
+    
     def leave_entry(self,entry:tk.Entry):
         for i in self.entries:
             configure_colours(i,colour_scheme)
@@ -119,3 +140,4 @@ if __name__ == "__main__":
         #d.add_book(book)
     #d.commit()
     ui =UserInterface()
+
