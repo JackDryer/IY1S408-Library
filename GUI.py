@@ -48,15 +48,31 @@ class UserInterface:
         self.root.rowconfigure(1,weight=1)
         self.options = UserOptions(self.root)
         self.outputbox = BookList(self.root,self.database)
-        self.outputbox.set_output(self.database.read())
+        self.options.sorting_strvar.trace_add("write", self.update_ordering)
+        self.database.add_ordering("book_ID")
         Book.database =self.database
+        self.update_output()
         self.root.mainloop()
+    def update_output(self):
+        self.outputbox.set_output(self.database.read())
+    def update_ordering(self,*args):
+        self.database.remove_ordering(0)
+        self.database.add_ordering(self.options.sorting_strvar.get())
+        self.update_output()
 class UserOptions:
     def __init__(self,root) -> None:
+        frame = tk.Frame(root)
+        frame.grid_rowconfigure(1,weight=1)
+        frame.grid_columnconfigure(0,weight=1)
+        frame.grid(sticky="NSEW")
         id = database.BOOKS_FIELDS[0]
+        self.filter = tk.Entry(frame)
+        configure_colours(self.filter,colour_scheme=colour_scheme)
         self.sorting_strvar = tk.StringVar(value=id)
-        self.sorting_box = tk.OptionMenu(root,self.sorting_strvar,id,Book.author_feild,Book.stock_field,*Book.book_fields)
-        self.sorting_box.grid(row = 0, column= 0, sticky="NSEW")
+        self.sorting_box = tk.OptionMenu(frame,self.sorting_strvar,id,*(Book.book_fields+(Book.author_feild,Book.stock_field))) #weird splat and tuple arithamatic to make things in the right order
+        configure_colours(self.sorting_box,colour_scheme=colour_scheme)
+        self.filter.grid(row = 0, column= 0, sticky="NSEW")
+        self.sorting_box.grid(row = 0, column= 1, sticky="NSEW")
     @property
     def sorting(self) ->str:
         return self.sorting_strvar.get()
@@ -70,19 +86,19 @@ class BookList:
         self.displayed_books= []
         self.update_func = database
     def create_headings(self):
-        for i,name in enumerate(Book.book_fields+(Book.stock_field,Book.author_feild)):
-            border = tk.Frame(self.frame,background="white")
+        for i,name in enumerate(Book.book_fields+(Book.author_feild,Book.stock_field)):
+            border = tk.Frame(self.frame,background="black",borderwidth=1)
             border.grid_columnconfigure(0,weight=1)
             label = tk.Label (border,text=name[0].upper()+name[1:])
             configure_colours(label,highlight_colour_scheme)
-            label.grid(sticky="NSEW",padx=1,pady=1)
+            label.grid(sticky="NSEW")
             border.grid(row=0,column=i,sticky="NSEW")
     def set_output(self,data):
         self.data = data
         self.update_output()
     def update_output(self):
         length = len(self.data)
-        for row, book in enumerate(self.data):
+        for row, book in enumerate(self.data[:50]):
             self.displayed_books.append(Book(self.frame,row+1,book,self.update_func))
             
 class Book:
@@ -107,8 +123,8 @@ class Book:
         authorbox.column_name = self.author_feild
         for x, i in enumerate(temp):
             self.config_element(i,x)
-        self.config_element(stock,x+1)
-        self.config_element(authorbox,x+2)
+        self.config_element(authorbox,x+1)
+        self.config_element(stock,x+2)
         self.author.trace_add("write",self.set_author)
 
     def create_element(self,column_name) ->tk.Entry:

@@ -79,6 +79,7 @@ ON books.book_ID = stock.book_ID
 JOIN authors ON books.author_ID = authors.author_ID
 {filtersql} {self.generate_orderings()}""",values)
         result_lists =self.cur.fetchall()
+        # compreherions are funny
         results = [
             { 
                 i: row[x] 
