@@ -49,7 +49,8 @@ class UserInterface:
         self.options = UserOptions(self.root)
         self.outputbox = BookList(self.root,self.database)
         self.options.sorting_strvar.trace_add("write", self.update_ordering)
-        self.database.add_ordering("book_ID")
+        self.options.sorting_direction_strvar.trace_add("write", self.update_ordering)
+        self.database.add_ordering("book_ID")# so that it can be removed later
         Book.database =self.database
         self.update_output()
         self.root.mainloop()
@@ -57,7 +58,7 @@ class UserInterface:
         self.outputbox.set_output(self.database.read())
     def update_ordering(self,*args):
         self.database.remove_ordering(0)
-        self.database.add_ordering(self.options.sorting_strvar.get())
+        self.database.add_ordering(self.options.sorting_strvar.get(),self.options.sorting_direction_strvar.get())
         self.update_output()
 class UserOptions:
     def __init__(self,root) -> None:
@@ -71,8 +72,12 @@ class UserOptions:
         self.sorting_strvar = tk.StringVar(value=id)
         self.sorting_box = tk.OptionMenu(frame,self.sorting_strvar,id,*(Book.book_fields+(Book.author_feild,Book.stock_field))) #weird splat and tuple arithamatic to make things in the right order
         configure_colours(self.sorting_box,colour_scheme=colour_scheme)
+        self.sorting_direction_strvar = tk.StringVar(value="asc")
+        self.sorting_direction_box = tk.OptionMenu(frame,self.sorting_direction_strvar,"asc","desc")
+        configure_colours(self.sorting_direction_box,colour_scheme=colour_scheme)
         self.filter.grid(row = 0, column= 0, sticky="NSEW")
         self.sorting_box.grid(row = 0, column= 1, sticky="NSEW")
+        self.sorting_direction_box.grid(row = 0, column= 2, sticky="NSEW")
     @property
     def sorting(self) ->str:
         return self.sorting_strvar.get()
