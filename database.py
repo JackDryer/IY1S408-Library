@@ -121,7 +121,7 @@ JOIN authors ON books.author_ID = authors.author_ID
         self.cur.execute("SELECT * FROM authors")
         return self.cur.fetchall()
     def generate_filters(self):
-        filters = " AND ".join((f"{i[0]} = ?" for i in self.filters))
+        filters = " AND ".join((f"{i[0]} LIKE ?" for i in self.filters))
         return " WHERE " + filters if filters else "" , [i[1] for i in self.filters]
     def generate_orderings(self):
         filters = ", ".join(self.orderings)

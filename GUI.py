@@ -51,6 +51,8 @@ class UserInterface:
         self.options.sorting_strvar.trace_add("write", self.update_ordering)
         self.options.sorting_direction_strvar.trace_add("write", self.update_ordering)
         self.database.add_ordering("book_ID")# so that it can be removed later
+        self.options.filter_field_str.trace_add("write", self.update_filtering)
+        self.options.filter_str.trace_add("write", self.update_filtering)
         Book.database =self.database
         self.update_output()
         self.root.mainloop()
@@ -60,14 +62,24 @@ class UserInterface:
         self.database.remove_ordering(0)
         self.database.add_ordering(self.options.sorting_strvar.get(),self.options.sorting_direction_strvar.get())
         self.update_output()
+    def update_filtering(self,*args):
+        if self.database.generate_filters()[0]!="":
+            self.database.remove_filter(0)
+        if self.options.filter_str.get():
+            self.database.add_filter(self.options.filter_field_str.get(),self.options.filter_str.get())
+        self.update_output()
 class UserOptions:
     def __init__(self,root) -> None:
         frame = tk.Frame(root)
         frame.grid_rowconfigure(1,weight=1)
-        frame.grid_columnconfigure(0,weight=1)
+        frame.grid_columnconfigure(1,weight=1)
         frame.grid(sticky="NSEW")
         id = database.BOOKS_FIELDS[0]
-        self.filter = tk.Entry(frame)
+        self.filter_field_str = tk.StringVar(value=id)
+        self.filter_field = tk.OptionMenu(frame,self.filter_field_str,id,*(Book.book_fields+(Book.author_feild,Book.stock_field))) #weird splat and tuple arithamatic to make things in the right order
+        configure_colours(self.filter_field,colour_scheme=colour_scheme)
+        self.filter_str = tk.StringVar()
+        self.filter = tk.Entry(frame,textvariable=self.filter_str)
         configure_colours(self.filter,colour_scheme=colour_scheme)
         self.sorting_strvar = tk.StringVar(value=id)
         self.sorting_box = tk.OptionMenu(frame,self.sorting_strvar,id,*(Book.book_fields+(Book.author_feild,Book.stock_field))) #weird splat and tuple arithamatic to make things in the right order
@@ -75,9 +87,10 @@ class UserOptions:
         self.sorting_direction_strvar = tk.StringVar(value="asc")
         self.sorting_direction_box = tk.OptionMenu(frame,self.sorting_direction_strvar,"asc","desc")
         configure_colours(self.sorting_direction_box,colour_scheme=colour_scheme)
-        self.filter.grid(row = 0, column= 0, sticky="NSEW")
-        self.sorting_box.grid(row = 0, column= 1, sticky="NSEW")
-        self.sorting_direction_box.grid(row = 0, column= 2, sticky="NSEW")
+        self.filter_field.grid(row = 0, column=0, sticky="NSEW")
+        self.filter.grid(row = 0, column= 1, sticky="NSEW")
+        self.sorting_box.grid(row = 0, column= 2, sticky="NSEW")
+        self.sorting_direction_box.grid(row = 0, column= 3, sticky="NSEW")
     @property
     def sorting(self) ->str:
         return self.sorting_strvar.get()
@@ -102,6 +115,9 @@ class BookList:
         self.data = data
         self.update_output()
     def update_output(self):
+        for book in self.displayed_books:
+            book.grid_remove()
+        self.displayed_books = []
         length = len(self.data)
         for row, book in enumerate(self.data[:50]):
             self.displayed_books.append(Book(self.frame,row+1,book,self.update_func))
@@ -160,7 +176,9 @@ class Book:
             entry.configure(**select_colour_scheme)
     def set_author(self,irreleventvalue,irreleventvalue2,irreleventvalue3):
         self.database.update_description(self.ID,"author_ID",self.author_dictionary[self.author.get()])
-
+    def grid_remove(self):
+        for i in self.entries:
+            i.grid_remove()
 
 if __name__ == "__main__":
     #d = DataBase()
