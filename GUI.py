@@ -1,5 +1,7 @@
 import database
 import tkinter as  tk
+import re # used to validate user input
+
 colour_scheme = {
     "bg": "#010740",
     "fg":"#ffffff",
@@ -16,6 +18,12 @@ highlight_colour_scheme ={
 
 select_colour_scheme = {
     "bg": "#ff9500",
+    "fg":"#000000",
+    "highlightbackground":"#ff9500",
+    "highlightcolor" :"#000000",
+}
+error_colour_scheme = {
+    "bg": "#a10202",
     "fg":"#000000",
     "highlightbackground":"#ff9500",
     "highlightcolor" :"#000000",
@@ -58,11 +66,18 @@ class UserInterface:
         self.root.mainloop()
     def update_output(self):
         self.outputbox.set_output(self.database.read())
+
     def update_ordering(self,*args):
         self.database.remove_ordering(0)
         self.database.add_ordering(self.options.sorting_strvar.get(),self.options.sorting_direction_strvar.get())
         self.update_output()
     def update_filtering(self,*args):
+        try:
+            re.compile(self.options.filter_str.get())
+            configure_colours(self.options.filter,colour_scheme)
+        except re.error:
+            configure_colours(self.options.filter,error_colour_scheme)
+            return
         if self.database.generate_filters()[0]!="":
             self.database.remove_filter(0)
         if self.options.filter_str.get():
@@ -115,13 +130,14 @@ class BookList:
         self.data = data
         self.update_output()
     def update_output(self):
-        for book in self.displayed_books:
-            book.grid_remove()
-        self.displayed_books = []
+        self.clear_output()
         length = len(self.data)
         for row, book in enumerate(self.data[:50]):
             self.displayed_books.append(Book(self.frame,row+1,book,self.update_func))
-            
+    def clear_output(self):
+        for book in self.displayed_books:
+            book.destroy()
+        self.displayed_books = []
 class Book:
     book_fields = database.BOOKS_FIELDS[1:-1]
     author_feild = database.AUTHOR_FIELDS[1]
@@ -176,9 +192,9 @@ class Book:
             entry.configure(**select_colour_scheme)
     def set_author(self,irreleventvalue,irreleventvalue2,irreleventvalue3):
         self.database.update_description(self.ID,"author_ID",self.author_dictionary[self.author.get()])
-    def grid_remove(self):
+    def destroy(self):
         for i in self.entries:
-            i.grid_remove()
+            i.destroy()
 
 if __name__ == "__main__":
     #d = DataBase()

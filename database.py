@@ -1,6 +1,12 @@
 import sqlite3        
 from typing import Final,Tuple
 from enum import Enum
+import re
+
+def regexp(expr, item):
+    item = str(item)
+    reg = re.compile(expr)
+    return reg.fullmatch(item) is not None
 
 AUTHOR_TABLE :Final[str] = "authors"
 AUTHOR_FIELDS :Final[Tuple[str]] = ("author_ID","author_name")
@@ -16,6 +22,7 @@ class DataBase:
     def __init__(self) -> None:
         self.con = sqlite3.connect("database.db")
         self.con.execute("PRAGMA foreign_keys = ON")
+        self.con.create_function("REGEXP", 2, regexp)
         self.cur = self.con.cursor()
         self.filters = []
         self.orderings = []
@@ -121,7 +128,7 @@ JOIN authors ON books.author_ID = authors.author_ID
         self.cur.execute("SELECT * FROM authors")
         return self.cur.fetchall()
     def generate_filters(self):
-        filters = " AND ".join((f"{i[0]} LIKE ?" for i in self.filters))
+        filters = " AND ".join((f"{i[0]} REGEXP ?" for i in self.filters))
         return " WHERE " + filters if filters else "" , [i[1] for i in self.filters]
     def generate_orderings(self):
         filters = ", ".join(self.orderings)
