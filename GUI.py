@@ -76,17 +76,17 @@ class UserOptions:
         self.database = database
         self.update_output = update_func
         # set up frame object
-        frame = tk.Frame(root)
-        frame.grid_rowconfigure(1,weight=1)
-        frame.grid_columnconfigure(1,weight=1)
-        frame.grid(sticky="NSEW")
+        self.frame = tk.Frame(root)
+        self.frame.grid_rowconfigure(1,weight=1)
+        self.frame.grid_columnconfigure(1,weight=1)
+        self.frame.grid(sticky="NSEW")
         # setting up options
-        self.filter_field = ColumnOption(frame)
+        self.filter_field = ColumnOption(self.frame)
         self.filter_str = tk.StringVar()
-        self.filter = tk.Entry(frame,textvariable=self.filter_str)
+        self.filter = tk.Entry(self.frame,textvariable=self.filter_str)
         configure_colours(self.filter,colour_scheme=colour_scheme)
-        self.sorting = ColumnOption(frame)
-        self.sorting_direction = BetterOptionMenu(frame,("asc","desc"))
+        self.sorting = ColumnOption(self.frame)
+        self.sorting_direction = BetterOptionMenu(self.frame,("asc","desc"))
         # gridding into place
         self.filter_field.box.grid(row = 0, column=0, sticky="NSEW")
         self.filter.grid(row = 0, column= 1, sticky="NSEW")
