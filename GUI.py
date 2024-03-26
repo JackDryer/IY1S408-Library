@@ -1,4 +1,4 @@
-import database
+import database_interface
 import tkinter as  tk
 import re # used to validate user input
 
@@ -50,46 +50,27 @@ def configure_colours(element,colour_scheme):
 
 class UserInterface:
     def __init__(self) -> None:
-        self.database = database.DataBase()
+        self.database = database_interface.DataBase()
         self.root = tk.Tk()
         self.root.columnconfigure(0,weight=1)
         self.root.rowconfigure(1,weight=1)
-        self.options = UserOptions(self.root)
+        self.options = UserOptions(self.root,self.database,self.update_output)
         self.outputbox = BookList(self.root,self.database)
-        self.options.sorting_strvar.trace_add("write", self.update_ordering)
-        self.options.sorting_direction_strvar.trace_add("write", self.update_ordering)
-        self.database.add_ordering("book_ID")# so that it can be removed later
-        self.options.filter_field_str.trace_add("write", self.update_filtering)
-        self.options.filter_str.trace_add("write", self.update_filtering)
         Book.database =self.database
         self.update_output()
         self.root.mainloop()
     def update_output(self):
         self.outputbox.set_output(self.database.read())
 
-    def update_ordering(self,*args):
-        self.database.remove_ordering(0)
-        self.database.add_ordering(self.options.sorting_strvar.get(),self.options.sorting_direction_strvar.get())
-        self.update_output()
-    def update_filtering(self,*args):
-        try:
-            re.compile(self.options.filter_str.get())
-            configure_colours(self.options.filter,colour_scheme)
-        except re.error:
-            configure_colours(self.options.filter,error_colour_scheme)
-            return
-        if self.database.generate_filters()[0]!="":
-            self.database.remove_filter(0)
-        if self.options.filter_str.get():
-            self.database.add_filter(self.options.filter_field_str.get(),self.options.filter_str.get())
-        self.update_output()
 class UserOptions:
-    def __init__(self,root) -> None:
+    def __init__(self,root,database:database_interface.DataBase, update_func : callable) -> None:
+        self.database = database
+        self.update_output = update_func
         frame = tk.Frame(root)
         frame.grid_rowconfigure(1,weight=1)
         frame.grid_columnconfigure(1,weight=1)
         frame.grid(sticky="NSEW")
-        id = database.BOOKS_FIELDS[0]
+        id = database_interface.BOOKS_FIELDS[0]
         self.filter_field_str = tk.StringVar(value=id)
         self.filter_field = tk.OptionMenu(frame,self.filter_field_str,id,*(Book.book_fields+(Book.author_feild,Book.stock_field))) #weird splat and tuple arithamatic to make things in the right order
         configure_colours(self.filter_field,colour_scheme=colour_scheme)
@@ -106,9 +87,29 @@ class UserOptions:
         self.filter.grid(row = 0, column= 1, sticky="NSEW")
         self.sorting_box.grid(row = 0, column= 2, sticky="NSEW")
         self.sorting_direction_box.grid(row = 0, column= 3, sticky="NSEW")
-    @property
-    def sorting(self) ->str:
-        return self.sorting_strvar.get()
+        #bindings
+        self.sorting_strvar.trace_add("write", self.update_ordering)
+        self.sorting_direction_strvar.trace_add("write", self.update_ordering)
+        self.database.add_ordering("book_ID")# so that it can be removed later
+        self.filter_field_str.trace_add("write", self.update_filtering)
+        self.filter_str.trace_add("write", self.update_filtering)
+
+    def update_ordering(self,*args):
+        self.database.remove_ordering(0)
+        self.database.add_ordering(self.sorting_strvar.get(),self.sorting_direction_strvar.get())
+        self.update_output()
+    def update_filtering(self,*args):
+        try:
+            re.compile(self.filter_str.get())
+            configure_colours(self.filter,colour_scheme)
+        except re.error:
+            configure_colours(self.filter,error_colour_scheme)
+            return
+        if self.database.generate_filters()[0]!="":
+            self.database.remove_filter(0)
+        if self.filter_str.get():
+            self.database.add_filter(self.filter_field_str.get(),self.filter_str.get())
+        self.update_output()
 class BookList:
     def __init__(self,master,database):
         self.frame = tk.Frame(master)
@@ -139,10 +140,10 @@ class BookList:
             book.destroy()
         self.displayed_books = []
 class Book:
-    book_fields = database.BOOKS_FIELDS[1:-1]
-    author_feild = database.AUTHOR_FIELDS[1]
-    stock_field = database.STOCK_FIELDS[1]
-    def __init__(self,master:tk.Frame,row,book,databaseObject:database.DataBase):
+    book_fields = database_interface.BOOKS_FIELDS[1:-1]
+    author_feild = database_interface.AUTHOR_FIELDS[1]
+    stock_field = database_interface.STOCK_FIELDS[1]
+    def __init__(self,master:tk.Frame,row,book,databaseObject:database_interface.DataBase):
         self.master = master
         self.row = row
         self.book = book
