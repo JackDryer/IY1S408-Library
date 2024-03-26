@@ -49,7 +49,6 @@ class DataBase:
 
     def delete_book (self,book_ID):
         self.cur.execute("DELETE FROM books WHERE book_ID = ?", (book_ID,))
-    def commit(self):
         self.con.commit()
 
     def update_description(self,book_ID:int,column:str,new_description:str):
