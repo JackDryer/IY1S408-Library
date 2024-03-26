@@ -249,6 +249,9 @@ class Menu:
         self.add_author_button = tk.Button(self.frame,text="add author",command=self.ask_add_author)
         configure_colours(self.add_author_button,colour_scheme)
         self.add_author_button.grid(row= 0, column=2, sticky="NSEW")
+        self.delete_author_button = tk.Button(self.frame,text="delete author",command=self.ask_delete_author)
+        configure_colours(self.delete_author_button,colour_scheme)
+        self.delete_author_button.grid(row= 0, column=3, sticky="NSEW")
     def confirm_delete_book(self):
         if self.active_book.book ==None:         
             messagebox.showwarning(title="",message="You must select a book before you can delete it")
@@ -333,6 +336,32 @@ class Menu:
         self.database.add_author(author)
         self.update_output()
         popup.destroy()
+    def ask_delete_author(self):
+        popup = tk.Toplevel(self.frame)
+        popup.columnconfigure(1,weight=1)
+        label = tk.Label(popup,text= "Please Select an Author to delete",font=("Arial", 14))
+        configure_colours(label,colour_scheme)
+        label.grid(sticky="NSEW")
+        author_dict = self.database.get_authors()
+        author = BetterOptionMenu(popup,tuple(author_dict.keys()))
+        author.box.grid(sticky="NSEW")
+        options = tk.Frame(popup,bg = colour_scheme["bg"])
+        options.grid(sticky="NSEW")
+        for column, weight in enumerate((5,1,1,1,5)):
+            options.grid_columnconfigure(column,weight=weight)
+        no_button = tk.Button(options,text="Cancel",command= popup.destroy)
+        configure_colours(no_button,colour_scheme)
+        no_button.grid(row=0,column=1,sticky="NSEW")
+        yes_button = tk.Button(options,text="Delete",command= lambda :self.delete_author(author_dict[author.strvar.get()],popup)) # contain the book so this popup is always associated with this book
+        configure_colours(yes_button,colour_scheme)
+        yes_button.grid(row=0,column=3,sticky="NSEW")
+        no_button.focus()
+        popup.bind('<Return>',lambda e:no_button.invoke()) # dont delete my befult
+    def delete_author(self,author_ID,popup):
+        self.database.delete_author(author_ID)
+        self.update_output()
+        popup.destroy()
+
 if __name__ == "__main__":
     #d = DataBase()
     #book = {"name":"peter pan","ISBN_num": "37872","date":"yesterday","description":"it exists","author_ID":1}
