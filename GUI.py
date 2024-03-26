@@ -62,41 +62,46 @@ class UserInterface:
     def update_output(self):
         self.outputbox.set_output(self.database.read())
 
+class BetterOptionMenu:
+    def __init__(self,master,options:tuple) -> None:
+        self.strvar = tk.StringVar(value=options[0])
+        self.box = tk.OptionMenu(master,self.strvar,*options)
+        configure_colours(self.box,colour_scheme=colour_scheme)
+class ColumnOption (BetterOptionMenu):
+    def __init__(self, master) -> None:
+        super().__init__(master, (database_interface.BOOKS_FIELDS[0],)+Book.book_fields+(Book.author_feild,Book.stock_field))
+        
 class UserOptions:
     def __init__(self,root,database:database_interface.DataBase, update_func : callable) -> None:
         self.database = database
         self.update_output = update_func
+        # set up frame object
         frame = tk.Frame(root)
         frame.grid_rowconfigure(1,weight=1)
         frame.grid_columnconfigure(1,weight=1)
         frame.grid(sticky="NSEW")
-        id = database_interface.BOOKS_FIELDS[0]
-        self.filter_field_str = tk.StringVar(value=id)
-        self.filter_field = tk.OptionMenu(frame,self.filter_field_str,id,*(Book.book_fields+(Book.author_feild,Book.stock_field))) #weird splat and tuple arithamatic to make things in the right order
-        configure_colours(self.filter_field,colour_scheme=colour_scheme)
+        # setting up options
+        self.filter_field = ColumnOption(frame)
         self.filter_str = tk.StringVar()
         self.filter = tk.Entry(frame,textvariable=self.filter_str)
         configure_colours(self.filter,colour_scheme=colour_scheme)
-        self.sorting_strvar = tk.StringVar(value=id)
-        self.sorting_box = tk.OptionMenu(frame,self.sorting_strvar,id,*(Book.book_fields+(Book.author_feild,Book.stock_field))) #weird splat and tuple arithamatic to make things in the right order
-        configure_colours(self.sorting_box,colour_scheme=colour_scheme)
-        self.sorting_direction_strvar = tk.StringVar(value="asc")
-        self.sorting_direction_box = tk.OptionMenu(frame,self.sorting_direction_strvar,"asc","desc")
-        configure_colours(self.sorting_direction_box,colour_scheme=colour_scheme)
-        self.filter_field.grid(row = 0, column=0, sticky="NSEW")
+        self.sorting = ColumnOption(frame)
+        self.sorting_direction = BetterOptionMenu(frame,("asc","desc"))
+        # gridding into place
+        self.filter_field.box.grid(row = 0, column=0, sticky="NSEW")
         self.filter.grid(row = 0, column= 1, sticky="NSEW")
-        self.sorting_box.grid(row = 0, column= 2, sticky="NSEW")
-        self.sorting_direction_box.grid(row = 0, column= 3, sticky="NSEW")
+        self.sorting.box.grid(row = 0, column= 2, sticky="NSEW")
+        self.sorting_direction.box.grid(row = 0, column= 3, sticky="NSEW")
         #bindings
-        self.sorting_strvar.trace_add("write", self.update_ordering)
-        self.sorting_direction_strvar.trace_add("write", self.update_ordering)
+        self.sorting.strvar.trace_add("write", self.update_ordering)
+        self.sorting_direction.strvar.trace_add("write", self.update_ordering)
         self.database.add_ordering("book_ID")# so that it can be removed later
-        self.filter_field_str.trace_add("write", self.update_filtering)
+        self.filter_field.strvar.trace_add("write", self.update_filtering)
         self.filter_str.trace_add("write", self.update_filtering)
 
     def update_ordering(self,*args):
         self.database.remove_ordering(0)
-        self.database.add_ordering(self.sorting_strvar.get(),self.sorting_direction_strvar.get())
+        self.database.add_ordering(self.sorting.strvar.get(),self.sorting_direction.strvar.get())
         self.update_output()
     def update_filtering(self,*args):
         try:
@@ -108,7 +113,7 @@ class UserOptions:
         if self.database.generate_filters()[0]!="":
             self.database.remove_filter(0)
         if self.filter_str.get():
-            self.database.add_filter(self.filter_field_str.get(),self.filter_str.get())
+            self.database.add_filter(self.filter_field.strvar.get(),self.filter_str.get())
         self.update_output()
 class BookList:
     def __init__(self,master,database):
