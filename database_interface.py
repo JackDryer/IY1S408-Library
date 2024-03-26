@@ -123,9 +123,9 @@ JOIN authors ON books.author_ID = authors.author_ID
     def remove_ordering(self,index):
         self.orderings.pop(index)
 
-    def show_authors(self):
+    def get_authors(self):
         self.cur.execute("SELECT * FROM authors")
-        return self.cur.fetchall()
+        return {i[1]:i[0] for i in self.cur.fetchall()}
     def generate_filters(self):
         filters = " AND ".join((f"{i[0]} REGEXP ?" for i in self.filters))
         return " WHERE " + filters if filters else "" , [i[1] for i in self.filters]

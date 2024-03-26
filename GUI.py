@@ -66,49 +66,6 @@ class UserInterface:
 class BookHolder:
     def __init__(self) -> None:
         self.book :Book = None
-class Menu:
-    def __init__(self,root,database:database_interface.DataBase,update_function, active_book:BookHolder) -> None:
-        self.database = database
-        self.active_book = active_book
-        self.update_output =update_function
-        self.frame = tk.Frame(root,background=colour_scheme["bg"])
-        self.frame.grid_rowconfigure(0,weight=1)
-        #self.frame.grid_columnconfigure(0,weight=1)
-        self.frame.grid(sticky="NSEW")
-        self.add_book_button = tk.Button(self.frame,text="add book")
-        configure_colours(self.add_book_button,colour_scheme)
-        self.add_book_button.grid(sticky="NSEW")
-        self.delete_book_button = tk.Button(self.frame,text="delete book",command=self.confirm_delete_book)
-        configure_colours(self.delete_book_button,colour_scheme)
-        self.delete_book_button.grid(row= 0, column=1, sticky="NSEW")
-    def confirm_delete_book(self):
-        if self.active_book.book ==None:         
-            messagebox.showwarning(title="",message="You must select a book before you can delete it")
-        else:
-            popup = tk.Toplevel(self.frame)
-            for i in range(6):
-                popup.columnconfigure(i,weight=1)
-            are_you_sure = tk.Label(popup,text= "Are you sure you want to delete this book?",font=("Arial", 14))
-            configure_colours(are_you_sure,colour_scheme)
-            are_you_sure.grid(sticky="NSEW",columnspan=6)
-            add_headings(popup,1)
-            diplayed_book = Book(popup,2,self.active_book.book.book_dict,self.database,BookHolder())
-            options = tk.Frame(popup,bg = colour_scheme["bg"])
-            options.grid(sticky="NSEW",columnspan=6)
-            for column, weight in enumerate((5,1,1,1,5)):
-                options.grid_columnconfigure(column,weight=weight)
-            no_button = tk.Button(options,text="No",command= popup.destroy)
-            configure_colours(no_button,colour_scheme)
-            no_button.grid(row=0,column=1,sticky="NSEW")
-            no_button.focus()
-            yes_button = tk.Button(options,text="yes",command= lambda book = self.active_book.book :self.delete_book(book,popup)) # contain the book so this popup is always associated with this book
-            configure_colours(yes_button,colour_scheme)
-            yes_button.grid(row=0,column=3,sticky="NSEW")
-            popup.bind('<Return>',lambda e:no_button.invoke()) # dont delete my befult
-    def delete_book(self,book,popup:tk.Toplevel):
-        self.database.delete_book(book.ID)
-        popup.destroy()
-        self.update_output()
 
 class BetterOptionMenu:
     def __init__(self,master,options:tuple) -> None:
@@ -180,63 +137,84 @@ class BookList:
         add_headings(self.frame)
         self.frame.grid(row = 2, column= 0,sticky="NSEW")
         self.displayed_books= []
-        self.update_func = database
+        self.database = database
     def set_output(self,data):
         self.data = data
         self.update_output()
     def update_output(self):
         self.clear_output()
         length = len(self.data)
+        authors = self.database.get_authors()
         for row, book_dict in enumerate(self.data[:50]):
-            self.displayed_books.append(Book(self.frame,row+1,book_dict,self.update_func,self.active_book))
+            self.displayed_books.append(Book(self.frame,row+1,authors,book_dict,self.database,self.active_book))
     def clear_output(self):
         for book in self.displayed_books:
             book.destroy()
         self.displayed_books = []
-class Book:
+class IncompleteBook:
     book_fields = database_interface.BOOKS_FIELDS[1:-1]
     author_feild = database_interface.AUTHOR_FIELDS[1]
     stock_field = database_interface.STOCK_FIELDS[1]
-    def __init__(self,master:tk.Frame,row,book_dict,databaseObject:database_interface.DataBase,active_book):
+
+    def __init__(self, master: tk.Frame, row: int,author_dictionary):
         self.master = master
         self.row = row
-        self.book_dict = book_dict
-        self.database = databaseObject
-        self.active_book = active_book
+        self.author_dictionary = author_dictionary
         self.entries= []
-        self.ID = book_dict["book_ID"]
         temp = [self.create_element(i) for i in self.book_fields]
         stock = self.create_element(self.stock_field)
         vcmd = (self.master.register(lambda x: x.isdigit() or x ==""))
         stock.configure(validate="all",validatecommand=(vcmd, '%P'))
         self.author = tk.StringVar(master)
-        self.author.set(book_dict["author_name"])
-        self.author_dictionary = {i[1]:i[0] for i in self.database.show_authors()}
         authorbox = tk.OptionMenu(master,self.author,*self.author_dictionary.keys())
         authorbox.column_name = self.author_feild
         for x, i in enumerate(temp):
             self.config_element(i,x)
         self.config_element(authorbox,x+1)
         self.config_element(stock,x+2)
-        self.author.trace_add("write",self.set_author)
-
-    def create_element(self,column_name) ->tk.Entry:
-        entry = tk.Entry(self.master)
-        entry.insert(tk.END,str(self.book_dict[column_name]))
-        entry.column_name = column_name # this is deffinatly not a good idea, should use inheritance, but it doesn't change the funtionality.
-        return entry
-
-    def config_element(self,element,column):
+    def config_element(self,element:tk.Widget,column):
         configure_colours(element,colour_scheme)
         element.grid(row=self.row,column=column,sticky="NSEW")
         element.bind("<FocusOut>",lambda x: self.leave_entry(element))
         element.bind("<FocusIn>", lambda x: self.enter_entry(element))
         self.entries.append(element)
-    
+    def create_element(self,column_name) ->tk.Entry:
+        entry = tk.Entry(self.master)
+        entry.column_name = column_name # this is deffinatly not a good idea, should use inheritance, but it doesn't change the funtionality.
+        return entry
     def leave_entry(self,entry:tk.Entry):
-        self.active_book.book = None 
         for i in self.entries:
             configure_colours(i,colour_scheme)
+    def enter_entry(self,entry):
+        for i in self.entries:
+            configure_colours(i,highlight_colour_scheme)
+        entry.configure(**select_colour_scheme)
+    def get_add_dict(self):
+        book_dict = {entry.column_name: entry.get() if isinstance(entry,tk.Entry) else self.author.get() for entry in self.entries}
+        book_dict[database_interface.AUTHOR_FIELDS[0]]= self.author_dictionary [book_dict.pop(self.author_feild)]
+        return book_dict
+class Book (IncompleteBook):
+    def __init__(self,
+                 master:tk.Frame,
+                 row,
+                 author_dictionary,
+                 book_dict,
+                 databaseObject:database_interface.DataBase,
+                 active_book):
+        self.book_dict = book_dict
+        super().__init__(master,row,author_dictionary)
+        self.database = databaseObject
+        self.active_book = active_book
+        self.ID = book_dict["book_ID"]
+        self.author.set(book_dict["author_name"])
+        self.author.trace_add("write",self.set_author)
+    def create_element(self, column_name) -> tk.Entry:
+        entry =  super().create_element(column_name)
+        entry.insert(tk.END,str(self.book_dict[column_name]))
+        return entry
+    def leave_entry(self,entry:tk.Entry):
+        super().leave_entry(entry)
+        self.active_book.book = None 
         if entry.column_name == self.author_feild:
             return
         elif entry.column_name ==self.stock_field:
@@ -245,17 +223,89 @@ class Book:
             self.database.update_description(self.ID,entry.column_name,entry.get())
         self.book_dict[entry.column_name] = entry.get()
     def enter_entry(self,entry):
+        super().enter_entry(entry)
         self.active_book.book = self
-        for i in self.entries:
-            configure_colours(i,highlight_colour_scheme)
-            entry.configure(**select_colour_scheme)
     def set_author(self,irreleventvalue,irreleventvalue2,irreleventvalue3):
         self.book_dict["author_name"] =self.author.get()
         self.database.update_description(self.ID,"author_ID",self.author_dictionary[self.author.get()])
     def destroy(self):
         for i in self.entries:
             i.destroy()
-
+class Menu:
+    def __init__(self,root,database:database_interface.DataBase,update_function, active_book:BookHolder) -> None:
+        self.database = database
+        self.active_book = active_book
+        self.update_output =update_function
+        self.frame = tk.Frame(root,background=colour_scheme["bg"])
+        self.frame.grid_rowconfigure(0,weight=1)
+        #self.frame.grid_columnconfigure(0,weight=1)
+        self.frame.grid(sticky="NSEW")
+        self.add_book_button = tk.Button(self.frame,text="add book", command= self.request_added_book)
+        configure_colours(self.add_book_button,colour_scheme)
+        self.add_book_button.grid(sticky="NSEW")
+        self.delete_book_button = tk.Button(self.frame,text="delete book",command=self.confirm_delete_book)
+        configure_colours(self.delete_book_button,colour_scheme)
+        self.delete_book_button.grid(row= 0, column=1, sticky="NSEW")
+    def confirm_delete_book(self):
+        if self.active_book.book ==None:         
+            messagebox.showwarning(title="",message="You must select a book before you can delete it")
+        else:
+            popup = tk.Toplevel(self.frame)
+            for i in range(6):
+                popup.columnconfigure(i,weight=1)
+            are_you_sure = tk.Label(popup,text= "Are you sure you want to delete this book?",font=("Arial", 14))
+            configure_colours(are_you_sure,colour_scheme)
+            are_you_sure.grid(sticky="NSEW",columnspan=6)
+            add_headings(popup,1)
+            diplayed_book = Book(popup,2,{1:self.active_book.book.author},self.active_book.book.book_dict,self.database,BookHolder())
+            options = tk.Frame(popup,bg = colour_scheme["bg"])
+            options.grid(sticky="NSEW",columnspan=6)
+            for column, weight in enumerate((5,1,1,1,5)):
+                options.grid_columnconfigure(column,weight=weight)
+            no_button = tk.Button(options,text="No",command= popup.destroy)
+            configure_colours(no_button,colour_scheme)
+            no_button.grid(row=0,column=1,sticky="NSEW")
+            no_button.focus()
+            yes_button = tk.Button(options,text="yes",command= lambda book = self.active_book.book :self.delete_book(book,popup)) # contain the book so this popup is always associated with this book
+            configure_colours(yes_button,colour_scheme)
+            yes_button.grid(row=0,column=3,sticky="NSEW")
+            popup.bind('<Return>',lambda e:no_button.invoke()) # dont delete my befult
+    def delete_book(self,book,popup:tk.Toplevel):
+        self.database.delete_book(book.ID)
+        popup.destroy()
+        self.update_output()
+    def request_added_book(self):
+        popup = tk.Toplevel(self.frame)
+        for i in range(6):
+            popup.columnconfigure(i,weight=1)
+        lable = tk.Label(popup,text= "Add a Book",font=("Arial", 14))
+        configure_colours(lable,colour_scheme)
+        lable.grid(sticky="NSEW",columnspan=6)
+        add_headings(popup,1)
+        book = IncompleteBook(popup,2,self.database.get_authors())
+        #diplayed_book = Book(popup,2,{},self.database,BookHolder())
+        options = tk.Frame(popup,bg = colour_scheme["bg"])
+        options.grid(sticky="NSEW",columnspan=6)
+        for column, weight in enumerate((5,1,1,1,5)):
+            options.grid_columnconfigure(column,weight=weight)
+        cancel_button = tk.Button(options,text="Cancel",command= popup.destroy)
+        configure_colours(cancel_button,colour_scheme)
+        cancel_button.grid(row=0,column=1,sticky="NSEW")
+        add_button = tk.Button(options,text="Add",command=lambda: self.add_book(book,popup)) # contain the book so this popup is always associated with this book
+        configure_colours(add_button,colour_scheme)
+        add_button.grid(row=0,column=3,sticky="NSEW")
+        add_button.focus()
+        popup.bind('<Return>',lambda e:add_button.invoke())
+    def add_book(self,book:IncompleteBook,popup:tk.Toplevel):
+        try:
+            book_dict= book.get_add_dict()
+        except KeyError:
+            messagebox.showinfo("error adding book", "please select an author")
+            popup.lift()
+            return
+        self.database.add_book(book_dict)
+        popup.destroy()
+    
 if __name__ == "__main__":
     #d = DataBase()
     #book = {"name":"peter pan","ISBN_num": "37872","date":"yesterday","description":"it exists","author_ID":1}
