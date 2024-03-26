@@ -240,12 +240,15 @@ class Menu:
         self.frame.grid_rowconfigure(0,weight=1)
         #self.frame.grid_columnconfigure(0,weight=1)
         self.frame.grid(sticky="NSEW")
-        self.add_book_button = tk.Button(self.frame,text="add book", command= self.request_added_book)
+        self.add_book_button = tk.Button(self.frame,text="add book", command= self.ask_added_book)
         configure_colours(self.add_book_button,colour_scheme)
         self.add_book_button.grid(sticky="NSEW")
         self.delete_book_button = tk.Button(self.frame,text="delete book",command=self.confirm_delete_book)
         configure_colours(self.delete_book_button,colour_scheme)
         self.delete_book_button.grid(row= 0, column=1, sticky="NSEW")
+        self.add_author_button = tk.Button(self.frame,text="add author",command=self.ask_add_author)
+        configure_colours(self.add_author_button,colour_scheme)
+        self.add_author_button.grid(row= 0, column=2, sticky="NSEW")
     def confirm_delete_book(self):
         if self.active_book.book ==None:         
             messagebox.showwarning(title="",message="You must select a book before you can delete it")
@@ -274,7 +277,7 @@ class Menu:
         self.database.delete_book(book.ID)
         popup.destroy()
         self.update_output()
-    def request_added_book(self):
+    def ask_added_book(self):
         popup = tk.Toplevel(self.frame)
         for i in range(6):
             popup.columnconfigure(i,weight=1)
@@ -305,7 +308,31 @@ class Menu:
             return
         self.database.add_book(book_dict)
         popup.destroy()
-    
+    def ask_add_author(self):
+        popup = tk.Toplevel(self.frame)
+        popup.columnconfigure(0,weight=1)
+        lable = tk.Label(popup,text= "Add an Author",font=("Arial", 14))
+        configure_colours(lable,colour_scheme)
+        lable.grid(sticky="NSEW")
+        author = tk.Entry(popup)
+        configure_colours(author,colour_scheme)
+        author.grid(row=1,column=0,sticky="NSEW")
+        options = tk.Frame(popup,bg = colour_scheme["bg"])
+        options.grid(row=2,column=0,sticky="NSEW",columnspan=6)
+        for column, weight in enumerate((5,1,1,1,5)):
+            options.grid_columnconfigure(column,weight=weight)
+        cancel_button = tk.Button(options,text="Cancel",command= popup.destroy)
+        configure_colours(cancel_button,colour_scheme)
+        cancel_button.grid(row=0,column=1,sticky="NSEW")
+        add_button = tk.Button(options,text="Add",command=lambda: self.add_author(author.get(),popup)) # contain the book so this popup is always associated with this book
+        configure_colours(add_button,colour_scheme)
+        add_button.grid(row=0,column=3,sticky="NSEW")
+        add_button.focus()
+        popup.bind('<Return>',lambda e:add_button.invoke())
+    def add_author(self,author,popup):
+        self.database.add_author(author)
+        self.update_output()
+        popup.destroy()
 if __name__ == "__main__":
     #d = DataBase()
     #book = {"name":"peter pan","ISBN_num": "37872","date":"yesterday","description":"it exists","author_ID":1}
