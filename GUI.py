@@ -2,6 +2,9 @@ import database_interface
 import tkinter as  tk
 import re # used to validate user input
 from tkinter import messagebox
+from collections.abc import Callable
+from typing import Any, Literal
+
 colour_scheme = {
     "bg": "#010740",
     "fg":"#ffffff",
@@ -75,7 +78,7 @@ class BetterOptionMenu:
 class ColumnOption (BetterOptionMenu):
     def __init__(self, master) -> None:
         super().__init__(master, (database_interface.BOOKS_FIELDS[0],)+Book.book_fields+(Book.author_feild,Book.stock_field))
-        
+
 class UserOptions:
     def __init__(self,root,database:database_interface.DataBase, update_func : callable) -> None:
         self.database = database
@@ -231,6 +234,33 @@ class Book (IncompleteBook):
     def destroy(self):
         for i in self.entries:
             i.destroy()
+
+class YesNoOptions:
+    def __init__(self,popup:tk.Toplevel,update_output:Callable[[],None| str],yes_message:str,no_message: str,yes_command:Callable[[],None],default_button = "no") -> None:
+            self.popup:tk.Toplevel = popup
+            self.yes_command = yes_command
+            self.update_output = update_output
+            options = tk.Frame(popup,bg = colour_scheme["bg"])
+            options.grid(sticky="NSEW",columnspan=6)
+            for column, weight in enumerate((5,1,1,1,5)):
+                options.grid_columnconfigure(column,weight=weight)
+            no_button = tk.Button(options,text=no_message,command= popup.destroy)
+            configure_colours(no_button,colour_scheme)
+            no_button.grid(row=0,column=1,sticky="NSEW")
+            yes_button = tk.Button(options,text=yes_message,command= self.yes_clicked)
+            configure_colours(yes_button,colour_scheme)
+            yes_button.grid(row=0,column=3,sticky="NSEW")
+            default_button = no_button if default_button == "no" else yes_button
+            default_button.focus()
+            popup.bind('<Return>',lambda e:default_button.invoke())
+    def yes_clicked(self):
+        result = self.yes_command()
+        if result == "canceled":
+            self.popup.lift()
+        else:
+            self.update_output()
+            self.popup.destroy()
+        
 class Menu:
     def __init__(self,root,database:database_interface.DataBase,update_function, active_book:BookHolder) -> None:
         self.database = database
@@ -261,106 +291,47 @@ class Menu:
                 popup.columnconfigure(i,weight=1)
             are_you_sure = tk.Label(popup,text= "Are you sure you want to delete this book?",font=("Arial", 14))
             configure_colours(are_you_sure,colour_scheme)
-            are_you_sure.grid(sticky="NSEW",columnspan=6)
+            are_you_sure.grid(sticky="NSEW")
             add_headings(popup,1)
             diplayed_book = Book(popup,2,{1:self.active_book.book.author},self.active_book.book.book_dict,self.database,BookHolder())
-            options = tk.Frame(popup,bg = colour_scheme["bg"])
-            options.grid(sticky="NSEW",columnspan=6)
-            for column, weight in enumerate((5,1,1,1,5)):
-                options.grid_columnconfigure(column,weight=weight)
-            no_button = tk.Button(options,text="No",command= popup.destroy)
-            configure_colours(no_button,colour_scheme)
-            no_button.grid(row=0,column=1,sticky="NSEW")
-            no_button.focus()
-            yes_button = tk.Button(options,text="yes",command= lambda book = self.active_book.book :self.delete_book(book,popup)) # contain the book so this popup is always associated with this book
-            configure_colours(yes_button,colour_scheme)
-            yes_button.grid(row=0,column=3,sticky="NSEW")
-            popup.bind('<Return>',lambda e:no_button.invoke()) # dont delete my befult
-    def delete_book(self,book,popup:tk.Toplevel):
-        self.database.delete_book(book.ID)
-        popup.destroy()
-        self.update_output()
+            options = YesNoOptions(popup,self.update_output,"Yes","No",lambda book = self.active_book.book :self.database.delete_book(book.ID))# contain the book so this popup is always associated with this book
     def ask_added_book(self):
         popup = tk.Toplevel(self.frame)
         for i in range(6):
             popup.columnconfigure(i,weight=1)
         lable = tk.Label(popup,text= "Add a Book",font=("Arial", 14))
         configure_colours(lable,colour_scheme)
-        lable.grid(sticky="NSEW",columnspan=6)
+        lable.grid(sticky="NSEW",columnspan=6) # need to re-grid for columnnsapn
         add_headings(popup,1)
         book = IncompleteBook(popup,2,self.database.get_authors())
-        #diplayed_book = Book(popup,2,{},self.database,BookHolder())
-        options = tk.Frame(popup,bg = colour_scheme["bg"])
-        options.grid(sticky="NSEW",columnspan=6)
-        for column, weight in enumerate((5,1,1,1,5)):
-            options.grid_columnconfigure(column,weight=weight)
-        cancel_button = tk.Button(options,text="Cancel",command= popup.destroy)
-        configure_colours(cancel_button,colour_scheme)
-        cancel_button.grid(row=0,column=1,sticky="NSEW")
-        add_button = tk.Button(options,text="Add",command=lambda: self.add_book(book,popup)) # contain the book so this popup is always associated with this book
-        configure_colours(add_button,colour_scheme)
-        add_button.grid(row=0,column=3,sticky="NSEW")
-        add_button.focus()
-        popup.bind('<Return>',lambda e:add_button.invoke())
-    def add_book(self,book:IncompleteBook,popup:tk.Toplevel):
+        options = YesNoOptions(popup,self.update_output,"Add","Cancel",lambda: self.add_book(book),"yes")
+    def add_book(self,book:IncompleteBook):
         try:
             book_dict= book.get_add_dict()
         except KeyError:
             messagebox.showinfo("error adding book", "please select an author")
-            popup.lift()
-            return
+            return "canceled"
         self.database.add_book(book_dict)
-        popup.destroy()
     def ask_add_author(self):
         popup = tk.Toplevel(self.frame)
         popup.columnconfigure(0,weight=1)
-        lable = tk.Label(popup,text= "Add an Author",font=("Arial", 14))
-        configure_colours(lable,colour_scheme)
-        lable.grid(sticky="NSEW")
+        label = tk.Label(popup,text= "Add an Author",font=("Arial", 14))
+        configure_colours(label,colour_scheme)
+        label.grid(sticky="NSEW")
         author = tk.Entry(popup)
         configure_colours(author,colour_scheme)
         author.grid(row=1,column=0,sticky="NSEW")
-        options = tk.Frame(popup,bg = colour_scheme["bg"])
-        options.grid(row=2,column=0,sticky="NSEW",columnspan=6)
-        for column, weight in enumerate((5,1,1,1,5)):
-            options.grid_columnconfigure(column,weight=weight)
-        cancel_button = tk.Button(options,text="Cancel",command= popup.destroy)
-        configure_colours(cancel_button,colour_scheme)
-        cancel_button.grid(row=0,column=1,sticky="NSEW")
-        add_button = tk.Button(options,text="Add",command=lambda: self.add_author(author.get(),popup)) # contain the book so this popup is always associated with this book
-        configure_colours(add_button,colour_scheme)
-        add_button.grid(row=0,column=3,sticky="NSEW")
-        add_button.focus()
-        popup.bind('<Return>',lambda e:add_button.invoke())
-    def add_author(self,author,popup):
-        self.database.add_author(author)
-        self.update_output()
-        popup.destroy()
+        options = YesNoOptions(popup,self.update_output,"Add","Cancel",lambda: self.database.add_author(author.get()),"yes")
     def ask_delete_author(self):
         popup = tk.Toplevel(self.frame)
-        popup.columnconfigure(1,weight=1)
+        popup.columnconfigure(0,weight=1)
         label = tk.Label(popup,text= "Please Select an Author to delete",font=("Arial", 14))
         configure_colours(label,colour_scheme)
         label.grid(sticky="NSEW")
         author_dict = self.database.get_authors()
         author = BetterOptionMenu(popup,tuple(author_dict.keys()))
         author.box.grid(sticky="NSEW")
-        options = tk.Frame(popup,bg = colour_scheme["bg"])
-        options.grid(sticky="NSEW")
-        for column, weight in enumerate((5,1,1,1,5)):
-            options.grid_columnconfigure(column,weight=weight)
-        no_button = tk.Button(options,text="Cancel",command= popup.destroy)
-        configure_colours(no_button,colour_scheme)
-        no_button.grid(row=0,column=1,sticky="NSEW")
-        yes_button = tk.Button(options,text="Delete",command= lambda :self.delete_author(author_dict[author.strvar.get()],popup)) # contain the book so this popup is always associated with this book
-        configure_colours(yes_button,colour_scheme)
-        yes_button.grid(row=0,column=3,sticky="NSEW")
-        no_button.focus()
-        popup.bind('<Return>',lambda e:no_button.invoke()) # dont delete my befult
-    def delete_author(self,author_ID,popup):
-        self.database.delete_author(author_ID)
-        self.update_output()
-        popup.destroy()
+        options = YesNoOptions(popup,self.update_output,"Delete","Cancel",lambda :self.database.delete_author(author_dict[author.strvar.get()]))
 
 if __name__ == "__main__":
     #d = DataBase()
@@ -370,4 +341,3 @@ if __name__ == "__main__":
         #d.add_book(book)
     #d.commit()
     ui =UserInterface()
-
