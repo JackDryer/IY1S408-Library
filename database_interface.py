@@ -31,7 +31,7 @@ class DataBase:
         #book = {"name":"peter pan","ISBN_num": "37872","date":"yesterday","de
         # scription":"it exists","author_ID":1}
         self.cur.execute("INSERT INTO books (name,ISBN_num,date,description,author_ID) VALUES(:name, :ISBN_num,:date,:description,:author_ID)",book)
-
+        self.con.commit()
     def add_author (self,author_name):
         self.cur.execute("INSERT INTO authors (author_name) VALUES(?)",(author_name,))
         self.con.commit()
