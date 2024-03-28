@@ -3,7 +3,6 @@ import tkinter as  tk
 import re # used to validate user input
 from tkinter import messagebox
 from collections.abc import Callable
-from typing import Any, Literal
 
 colour_scheme = {
     "bg": "#010740",
@@ -270,18 +269,16 @@ class Menu:
         self.frame.grid_rowconfigure(0,weight=1)
         #self.frame.grid_columnconfigure(0,weight=1)
         self.frame.grid(sticky="NSEW")
-        self.add_book_button = tk.Button(self.frame,text="add book", command= self.ask_added_book)
-        configure_colours(self.add_book_button,colour_scheme)
-        self.add_book_button.grid(sticky="NSEW")
-        self.delete_book_button = tk.Button(self.frame,text="delete book",command=self.confirm_delete_book)
-        configure_colours(self.delete_book_button,colour_scheme)
-        self.delete_book_button.grid(row= 0, column=1, sticky="NSEW")
-        self.add_author_button = tk.Button(self.frame,text="add author",command=self.ask_add_author)
-        configure_colours(self.add_author_button,colour_scheme)
-        self.add_author_button.grid(row= 0, column=2, sticky="NSEW")
-        self.delete_author_button = tk.Button(self.frame,text="delete author",command=self.ask_delete_author)
-        configure_colours(self.delete_author_button,colour_scheme)
-        self.delete_author_button.grid(row= 0, column=3, sticky="NSEW")
+        for index, (text, command) in enumerate(
+            (
+                ("add book",self.ask_added_book),
+                ("delete book", self.confirm_delete_book),
+                ("add author",self.ask_add_author),
+                ("delete author",self.ask_delete_author),
+            )):
+            button = tk.Button(self.frame,text=text, command= command)
+            configure_colours(button,colour_scheme)
+            button.grid(row= 0, column= index, sticky="NSEW")
     def confirm_delete_book(self):
         if self.active_book.book ==None:         
             messagebox.showwarning(title="",message="You must select a book before you can delete it")
@@ -291,7 +288,7 @@ class Menu:
                 popup.columnconfigure(i,weight=1)
             are_you_sure = tk.Label(popup,text= "Are you sure you want to delete this book?",font=("Arial", 14))
             configure_colours(are_you_sure,colour_scheme)
-            are_you_sure.grid(sticky="NSEW")
+            are_you_sure.grid(sticky="NSEW",columnspan=6)
             add_headings(popup,1)
             diplayed_book = Book(popup,2,{1:self.active_book.book.author},self.active_book.book.book_dict,self.database,BookHolder())
             options = YesNoOptions(popup,self.update_output,"Yes","No",lambda book = self.active_book.book :self.database.delete_book(book.ID))# contain the book so this popup is always associated with this book
