@@ -261,7 +261,7 @@ class IncompleteBook:
     author_feild = database_interface.AUTHOR_FIELDS[1]
     stock_field = database_interface.STOCK_FIELDS[1]
 
-    def __init__(self, master: tk.Frame, row: int, author_dictionary: Dict[str, int]) -> None:
+    def __init__(self, master: tk.Frame, row: int, author_dictionary: Dict[int, str]) -> None:
         self.master = master
         self.row = row
         self.author_dictionary = author_dictionary
@@ -294,10 +294,10 @@ class IncompleteBook:
 
     def create_element(self, column_name: str) -> tk.Entry:
         """creates a tkinter entry and associates it with its column
-        
+
         Parameters:
         column_name -- the name of the column ni the database associated with the entry
-        
+
         Returns:
         the created entry"""
         entry = tk.Entry(self.master)
@@ -315,7 +315,7 @@ class IncompleteBook:
 
     def enter_entry(self, entry: tk.Entry) -> None:
         """Changes the colour scheme of of the row when the book is selected and highlights the selected element
-        
+
         Parameters:
         entry -- the entry that has been entered"""
         for i in self.entries:
@@ -345,7 +345,7 @@ class Book (IncompleteBook):
     def __init__(self,
                  master: tk.Frame,
                  row: int,
-                 author_dictionary: Dict[str, int],
+                 author_dictionary: Dict[int, str],
                  book_dict,
                  database: database_interface.DataBase,
                  active_book: BookHolder):
@@ -359,10 +359,10 @@ class Book (IncompleteBook):
 
     def create_element(self, column_name: str) -> tk.Entry:
         """extends functionality to creates a tkinter entry amd initialises it with the books data
-        
+
         Parameters:
         column_name -- the name of the column ni the database associated with the entry
-                        
+
         Returns:
         the created entry"""
         entry = super().create_element(column_name)
@@ -371,7 +371,7 @@ class Book (IncompleteBook):
 
     def leave_entry(self, entry: tk.Entry) -> None:
         """extends functionality to update the database to match any change to the book
-        
+
         Parameters:
         entry -- the entry that has been left
         """
@@ -388,7 +388,7 @@ class Book (IncompleteBook):
 
     def enter_entry(self, entry: tk.Entry) -> None:
         """extends functionality to set the book to be the active book
-        
+
         Parameters:
         entry -- the entry that has been entered"""
         super().enter_entry(entry)
@@ -522,7 +522,7 @@ class Menu:
 
         Arguments:
         book -- the tkinter book to check and add
-        
+
         Returns:
         "canceled" -- the user has not entered valid data and should retry
         None -- the function successfully returned"""
