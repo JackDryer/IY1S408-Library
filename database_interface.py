@@ -221,7 +221,7 @@ JOIN authors ON books.author_ID = authors.author_ID
         return " ORDER BY " + filters if filters else ""
 
     def create_database(self) -> None:
-        """create the nessisary tables in the database"""
+        """create the necessary tables in the database"""
         self.cur.execute("""CREATE TABLE authors(
   author_ID    INTEGER PRIMARY KEY, 
   author_name  TEXT
