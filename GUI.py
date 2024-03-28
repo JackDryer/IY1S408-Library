@@ -101,7 +101,7 @@ class BetterOptionMenu:
     Parameters:
         master: the frame the owns the option menu
         options: an iterable that contains all the options the menu should display
-    
+
     Attributes:
         strvar : the string variable associated with the options menu
         box : the options menu object itself"""
@@ -110,6 +110,8 @@ class BetterOptionMenu:
         self.strvar = tk.StringVar(value=options[0])
         self.box = tk.OptionMenu(master, self.strvar, *options)
         configure_colours(self.box, colour_scheme=colour_scheme)
+
+
 class ColumnOption (BetterOptionMenu):
     """an options menu that shows the different fields (columns) in the database
 
@@ -170,7 +172,7 @@ class UserOptions:
 
     def update_filtering(self, *args) -> None:
         """Checks if the entered filter is valid, then sets the filtering of items displayed to mach that selected by the user,
-        
+
         Parameters:
             *args is the event trace information, that is not needed 
         """
@@ -187,6 +189,7 @@ class UserOptions:
                 self.filter_field.strvar.get(), self.filter_str.get())
         self.update_output()
 
+
 def add_headings(frame: tk.Frame, row=0) -> None:
     """Adds table headings to a frame
 
@@ -202,7 +205,7 @@ def add_headings(frame: tk.Frame, row=0) -> None:
         label.grid(sticky="NSEW")
         border.grid(row=row, column=i, sticky="NSEW")
 
-add_headings()
+
 class BookList:
     """Contains and displays all books
 
@@ -418,7 +421,7 @@ class YesNoOptions:
 
     """
 
-    def __init__(self, popup: tk.Toplevel, update_output: Callable[[], Literal["canceled"]| None], yes_message: str, no_message: str, yes_command: Callable[[], None], default_button="no") -> None:
+    def __init__(self, popup: tk.Toplevel, update_output: Callable[[], Literal["canceled"] | None], yes_message: str, no_message: str, yes_command: Callable[[], None], default_button="no") -> None:
         self.popup: tk.Toplevel = popup
         self.yes_command = yes_command
         self.update_output = update_output
