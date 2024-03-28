@@ -3,7 +3,7 @@ import tkinter as tk
 import re  # used to validate user input
 from tkinter import messagebox
 from collections.abc import Callable
-from typing import Dict, List, Iterable
+from typing import Dict, List, Iterable, Literal
 
 colour_scheme = {
     "bg": "#010740",
@@ -37,8 +37,8 @@ def configure_colours(element: tk.Widget, colour_scheme: Dict[str, str]) -> None
     """Takes a tkinter widget and configures it using the colour scheme
 
     Parameters:
-    element -- tke tkinter element to configure
-    colour_scheme -- a dictionary describing the desired colour scheme
+        element: tke tkinter element to configure
+        colour_scheme: a dictionary describing the desired colour scheme
     """
     if isinstance(element, (tk.Label, tk.Button)):
         new_colour_scheme = colour_scheme.copy()
@@ -89,7 +89,7 @@ class BookHolder:
     """holds a reference to a book
 
     Attributes:
-    book -- the reference to the book"""
+        book: the reference to the book"""
 
     def __init__(self) -> None:
         self.book: Book = None
@@ -99,27 +99,22 @@ class BetterOptionMenu:
     """Sets up an tkinter options menu
 
     Parameters:
-    master -- the frame the owns the option menu
-    options -- an iterable that contains all the options the menu should display
-
+        master: the frame the owns the option menu
+        options: an iterable that contains all the options the menu should display
+    
     Attributes:
-    strvar
-        the string variable associated with the options menu
-
-    box
-        the options menu object itself"""
+        strvar : the string variable associated with the options menu
+        box : the options menu object itself"""
 
     def __init__(self, master: tk.Frame, options: Iterable[str]) -> None:
         self.strvar = tk.StringVar(value=options[0])
         self.box = tk.OptionMenu(master, self.strvar, *options)
         configure_colours(self.box, colour_scheme=colour_scheme)
-
-
 class ColumnOption (BetterOptionMenu):
     """an options menu that shows the different fields (columns) in the database
 
     Parameters:
-    master -- the frame the owns the option menu"""
+        master: the frame the owns the option menu"""
 
     def __init__(self, master) -> None:
         super().__init__(master,
@@ -130,9 +125,9 @@ class UserOptions:
     """Gets the sorting and filtering information from the user and applies it to the database
 
     Parameters:
-    root -- the root frame
-    database -- the live database link
-    update_function -- the function to refresh the UI to match the database"""
+        root: the root frame
+        database: the live database link
+        update_function: the function to refresh the UI to match the database"""
 
     def __init__(self, root, database: database_interface.DataBase, update_func: Callable[[], None]) -> None:
         self.database = database
@@ -165,7 +160,8 @@ class UserOptions:
     def update_ordering(self, *args) -> None:
         """Sets the order of items displayed to mach that selected by the user
 
-        *args is the event trace information, that is not needed 
+        Parameters:
+            *args is the event trace information, that is not needed 
         """
         self.database.remove_ordering(0)
         self.database.add_ordering(
@@ -174,8 +170,9 @@ class UserOptions:
 
     def update_filtering(self, *args) -> None:
         """Checks if the entered filter is valid, then sets the filtering of items displayed to mach that selected by the user,
-
-        *args is the event trace information, that is not needed 
+        
+        Parameters:
+            *args is the event trace information, that is not needed 
         """
         try:
             re.compile(self.filter_str.get())
@@ -190,13 +187,12 @@ class UserOptions:
                 self.filter_field.strvar.get(), self.filter_str.get())
         self.update_output()
 
-
 def add_headings(frame: tk.Frame, row=0) -> None:
     """Adds table headings to a frame
 
     Parameters:
-    frame -- the frame to add the headings to 
-    row -- the row that the heading should be placed at (default 0)
+        frame: the frame to add the headings to 
+        row: the row that the heading should be placed at (default 0)
     """
     for i, name in enumerate(Book.book_fields+(Book.author_feild, Book.stock_field)):
         border = tk.Frame(frame, background="black", borderwidth=1)
@@ -206,14 +202,14 @@ def add_headings(frame: tk.Frame, row=0) -> None:
         label.grid(sticky="NSEW")
         border.grid(row=row, column=i, sticky="NSEW")
 
-
+add_headings()
 class BookList:
     """Contains and displays all books
 
     Parameters:
-    root -- the root frame
-    database -- the live database link
-    active_book -- a bondholder that holds the currently selected book"""
+        root: the root frame
+        database: the live database link
+        active_book: a BookHolder that holds the currently selected book"""
 
     def __init__(self, root: tk.Frame, database: database_interface.DataBase, active_book: BookHolder) -> None:
         self.frame = tk.Frame(root)
@@ -229,7 +225,7 @@ class BookList:
         """update the list of displayed books
 
         Parameters:
-        data -- the raw information required to build the list of books, in the desired order"""
+            data: the raw information required to build the list of books, in the desired order"""
         self.data = data
         self.update_output()
 
@@ -254,9 +250,10 @@ class IncompleteBook:
     Does not link to the database as is also used to input new books
 
     Parameters:
-    master -- the frame to place the book in
-    row -- the row in the frame to place the book
-    author_dictionary -- a dictionary linking authors to their ID"""
+        master: the frame to place the book in
+        row: the row in the frame to place the book
+        author_dictionary: a dictionary linking authors to their ID
+    """
     book_fields = database_interface.BOOKS_FIELDS[1:-1]
     author_feild = database_interface.AUTHOR_FIELDS[1]
     stock_field = database_interface.STOCK_FIELDS[1]
@@ -283,8 +280,8 @@ class IncompleteBook:
         """Configures an element
 
         Parameters:
-        element -- the element to be configured
-        column -- the desired column in the grid to place the element
+            element: the element to be configured
+            column: the desired column in the grid to place the element
         """
         configure_colours(element, colour_scheme)
         element.grid(row=self.row, column=column, sticky="NSEW")
@@ -296,10 +293,10 @@ class IncompleteBook:
         """creates a tkinter entry and associates it with its column
 
         Parameters:
-        column_name -- the name of the column ni the database associated with the entry
+            column_name: the name of the column ni the database associated with the entry
 
         Returns:
-        the created entry"""
+            the created entry"""
         entry = tk.Entry(self.master)
         # this is defiantly not a good idea, should use inheritance, but it doesn't change the funtionality.
         entry.column_name = column_name
@@ -309,7 +306,7 @@ class IncompleteBook:
         """Changes the colour scheme of of the row when the book is deselected
 
         Parameters:
-        entry -- the entry that has been left"""
+            entry:  the entry that has been left"""
         for i in self.entries:
             configure_colours(i, colour_scheme)
 
@@ -317,7 +314,7 @@ class IncompleteBook:
         """Changes the colour scheme of of the row when the book is selected and highlights the selected element
 
         Parameters:
-        entry -- the entry that has been entered"""
+            entry: the entry that has been entered"""
         for i in self.entries:
             configure_colours(i, highlight_colour_scheme)
         entry.configure(**select_colour_scheme)
@@ -336,11 +333,11 @@ class Book (IncompleteBook):
     Changes made by the user will be reflected in the database
 
     Parameters:
-    master -- the frame to place the book in
-    row -- the row in the frame to place the book
-    author_dictionary -- a dictionary linking authors to their ID
-    database -- the live database link
-    active_book -- a BookHolder that holds the currently selected book"""
+        master: the frame to place the book in
+        row: the row in the frame to place the book
+        author_dictionary: a dictionary linking authors to their ID
+        database: the live database link
+        active_book: a BookHolder that holds the currently selected book"""
 
     def __init__(self,
                  master: tk.Frame,
@@ -361,10 +358,10 @@ class Book (IncompleteBook):
         """extends functionality to creates a tkinter entry amd initialises it with the books data
 
         Parameters:
-        column_name -- the name of the column ni the database associated with the entry
+            column_name: the name of the column ni the database associated with the entry
 
         Returns:
-        the created entry"""
+            the created entry"""
         entry = super().create_element(column_name)
         entry.insert(tk.END, str(self.book_dict[column_name]))
         return entry
@@ -373,7 +370,7 @@ class Book (IncompleteBook):
         """extends functionality to update the database to match any change to the book
 
         Parameters:
-        entry -- the entry that has been left
+            entry: the entry that has been left
         """
         super().leave_entry(entry)
         self.active_book.book = None
@@ -412,15 +409,16 @@ class YesNoOptions:
     the "yes" option calls the yes_command and closes the toplevel if it does not return "canceled"
 
     Parameters:
-    popup -- the popup that the options are in
-    update_output -- the function to refresh the UI to match the database
-    yes_message -- the message associated with the "yes" option
-    no_message -- the message associated with the "no" option
-    yes_command -- the function to be ran if yes is clicked, returns "canceled" or None
-    default_button -- "yes" or "no", the button to default to if the user presses enter (default "no") 
+        popup: the popup that the options are in
+        update_output: the function to refresh the UI to match the database
+        yes_message: the message associated with the "yes" option
+        no_message: the message associated with the "no" option
+        yes_command: the function to be ran if yes is clicked, returns "canceled" or None
+        default_button: "yes" or "no", the button to default to if the user presses enter (default "no") 
+
     """
 
-    def __init__(self, popup: tk.Toplevel, update_output: Callable[[], None | str], yes_message: str, no_message: str, yes_command: Callable[[], None], default_button="no") -> None:
+    def __init__(self, popup: tk.Toplevel, update_output: Callable[[], Literal["canceled"]| None], yes_message: str, no_message: str, yes_command: Callable[[], None], default_button="no") -> None:
         self.popup: tk.Toplevel = popup
         self.yes_command = yes_command
         self.update_output = update_output
@@ -458,10 +456,10 @@ class Menu:
         Deleting an author
 
     Parameters:
-    root -- the root frame
-    database -- the live database link
-    update_function -- the function to refresh the UI to match the database
-    active_book -- a bondholder that holds the currently selected book
+        root: the root frame
+        database: the live database link
+        update_function: the function to refresh the UI to match the database
+        active_book: a bondholder that holds the currently selected book
     """
 
     def __init__(self, root: tk.Frame, database: database_interface.DataBase, update_function: Callable[[], None], active_book: BookHolder) -> None:
@@ -517,15 +515,15 @@ class Menu:
         options = YesNoOptions(
             popup, self.update_output, "Add", "Cancel", lambda: self.add_book(book), "yes")
 
-    def add_book(self, book: IncompleteBook) -> str | None:
+    def add_book(self, book: IncompleteBook) -> Literal["canceled"] | None:
         """checks if user entered data is valid, and adds the book if it is
 
-        Arguments:
-        book -- the tkinter book to check and add
+        Parameters:
+            book: the tkinter book to check and add
 
         Returns:
-        "canceled" -- the user has not entered valid data and should retry
-        None -- the function successfully returned"""
+            "canceled": the user has not entered valid data and should retry
+            None: the function successfully returned"""
         try:
             book_dict = book.get_add_dict()
         except KeyError:

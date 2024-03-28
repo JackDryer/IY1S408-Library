@@ -37,7 +37,7 @@ class DataBase:
         """adds a book to the database, adds an associated field in the stock table if it is specified
 
         Parameters:
-        book -- a dictionary defining  book to add
+            book: a dictionary defining  book to add
         this should have as keys name, ISBN_numb, date, description, and author_ID
         """
         # book = {"name":"peter pan","ISBN_num": "37872","date":"yesterday","de
@@ -54,7 +54,7 @@ class DataBase:
         """Adds an author to the authors table
 
         Parameters:
-        author_name -- the name of the author to add"""
+            author_name: the name of the author to add"""
         self.cur.execute(
             "INSERT INTO authors (author_name) VALUES(?)", (author_name,))
         self.con.commit()
@@ -64,8 +64,8 @@ class DataBase:
         """Updates an authors name in the authors table
 
         Parameters:
-        author_ID -- the ID of the author to change
-        author_name -- the new name of the author"""
+            author_ID: the ID of the author to change
+            author_name: the new name of the author"""
         self.cur.execute(
             f"UPDATE authors SET author_name = ? WHERE book_ID = ?", (author_name, author_ID))
         self.con.commit()
@@ -74,8 +74,8 @@ class DataBase:
         """Updates the stock stored of a book
 
         Parameters:
-        bookID -- the ID of the book to update
-        quantity -- the new quantity to set
+            bookID: the ID of the book to update
+            quantity: the new quantity to set
         """
         self.cur.execute("DELETE FROM stock WHERE book_ID = ?", (book_ID,))
         self.cur.execute(
@@ -86,7 +86,7 @@ class DataBase:
         """deletes an author (and all associated books) from the database
 
         Parameters:
-        author_ID -- the ID of the author to delete"""
+            author_ID: the ID of the author to delete"""
         self.cur.execute(
             "DELETE FROM authors WHERE author_ID = ?", (author_ID,))
         self.con.commit()
@@ -95,7 +95,7 @@ class DataBase:
         """deletes a book from the database
 
         Parameters:
-        book_ID -- the ID of the book to delete"""
+            book_ID: the ID of the book to delete"""
         self.cur.execute("DELETE FROM books WHERE book_ID = ?", (book_ID,))
         self.con.commit()
 
@@ -103,9 +103,9 @@ class DataBase:
         """updates an aspect of a book
 
         Parameters:
-        book_ID -- the ID of the book to modify
-        column -- the felid to modify
-        new_description -- the new value"""
+            book_ID: the ID of the book to modify
+            column: the felid to modify
+            new_description: the new value"""
         if column not in {"name", "ISBN_num", "date", "description", "author_ID"}:  # this counts as sqlinjection safe i guess
             raise Exception("Please enter a valid column name")
         self.cur.execute(f"UPDATE books SET {
@@ -134,7 +134,7 @@ ON books.book_ID = stock.book_ID
         """read the database according to the set filters and orderings
 
         Returns:
-        All items in the database
+            All items in the database
         format is: [{"book_ID" :123, "name": "the books name" ...}...]
         """
         # self.cur.execute("SELECT * FROM authors")
@@ -161,8 +161,8 @@ JOIN authors ON books.author_ID = authors.author_ID
         """Add a filter to the database
 
         Parameters:
-        filter -- the column to filter by
-        value -- the value to compare to
+            filter: the column to filter by
+            value: the value to compare to
         """
         if filter in {"book_ID", "name", "ISBN_num", "date", "description", "author_ID"}:  # this counts as sqlinjection safe i guess
             filter = "books."+filter
@@ -176,15 +176,15 @@ JOIN authors ON books.author_ID = authors.author_ID
         """Remove a filter from the database
 
         Parameters:
-        index -- the index of the filter to remove"""
+            index: the index of the filter to remove"""
         self.filters.pop(index)
 
     def add_ordering(self, column: str, direction: str = "asc") -> None:
         """Tell the read function to return in a specific order
 
         Parameters:
-        column -- the column to order by
-        direction -- the direction to order in"""
+            column: the column to order by
+            direction: the direction to order in"""
         # this counts as sqlinjection safe i guess
         if column in {"book_ID", "name", "ISBN_num", "date", "description", "author_ID"}:
             column = "books."+column
@@ -202,7 +202,7 @@ JOIN authors ON books.author_ID = authors.author_ID
         """Remove an ordering from the database
 
         Parameters:
-        index -- the index of the ordering to remove"""
+            index: the index of the ordering to remove"""
         self.orderings.pop(index)
 
     def get_authors(self) -> Dict[int, str]:
