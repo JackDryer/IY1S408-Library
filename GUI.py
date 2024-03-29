@@ -68,6 +68,7 @@ class UserInterface:
     def __init__(self) -> None:
         self.database = database_interface.DataBase()
         self.root = tk.Tk()
+        self.root.title("Library Management System")
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(2, weight=1)
         self.active_book = BookHolder()  # i want rusts option type but alas this is python
@@ -215,7 +216,7 @@ class BookList:
         active_book: a BookHolder that holds the currently selected book"""
 
     def __init__(self, root: tk.Frame, database: database_interface.DataBase, active_book: BookHolder) -> None:
-        self.frame = tk.Frame(root)
+        self.frame = tk.Frame(root, bg=colour_scheme["bg"])
         self.active_book = active_book
         for i in range(6):
             self.frame.columnconfigure(i, weight=1)
@@ -390,7 +391,7 @@ class Book (IncompleteBook):
         """extends functionality to set the book to be the active book
 
         Parameters:
-        entry -- the entry that has been entered"""
+            entry: the entry that has been entered"""
         super().enter_entry(entry)
         self.active_book.book = self
 
@@ -421,7 +422,7 @@ class YesNoOptions:
 
     """
 
-    def __init__(self, popup: tk.Toplevel, update_output: Callable[[], Literal["canceled"] | None], yes_message: str, no_message: str, yes_command: Callable[[], None], default_button="no") -> None:
+    def __init__(self, popup: tk.Toplevel, update_output: Callable[[], Literal["canceled"] | None], yes_message: str, no_message: str, yes_command: Callable[[], None], default_button: Literal["yes", "no"] = "no") -> None:
         self.popup: tk.Toplevel = popup
         self.yes_command = yes_command
         self.update_output = update_output
@@ -557,16 +558,33 @@ class Menu:
         label.grid(sticky="NSEW")
         author_dict = self.database.get_authors()
         author = BetterOptionMenu(popup, tuple(author_dict.keys()))
+        author.strvar.set("")  # default to no author
         author.box.grid(sticky="NSEW")
         options = YesNoOptions(popup, self.update_output, "Delete", "Cancel",
-                               lambda: self.database.delete_author(author_dict[author.strvar.get()]))
+                               lambda: self.delete_author(author.strvar.get(), author_dict))
+
+    def delete_author(self, author_name: str, author_dict: Dict[str, int]) -> Literal["canceled"] | None:
+        """checks if user has selected an author to delete, and removes it if it exists
+
+        Parameters:
+            author_name: the selected name of the author to delete
+            author_dict: dictionary of author names to IDs
+
+        Returns:
+            "canceled": the user has not selected an author and should retry
+            None: the function successfully returned"""
+        if author_name == "":
+            messagebox.showinfo("error deleting author",
+                                "please select an author to delete")
+            return "canceled"
+        self.database.delete_author(author_dict[author_name])
 
 
 if __name__ == "__main__":
-    # d = DataBase()
+    # d = database_interface.DataBase()
     # book = {"name":"peter pan","ISBN_num": "37872","date":"yesterday","description":"it exists","author_ID":1}
-    # for i in range (10000,20000):
-    #     d.delete_book(i)
-    # d.add_book(book)
+    # for i in range (200):
+    # d.delete_book(i)
+    #    d.add_book(book)
     # d.commit()
     ui = UserInterface()

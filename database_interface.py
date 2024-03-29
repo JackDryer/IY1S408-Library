@@ -185,7 +185,7 @@ JOIN authors ON books.author_ID = authors.author_ID
         Parameters:
             column: the column to order by
             direction: the direction to order in"""
-        # this counts as sqlinjection safe i guess
+        # this counts as sql injection safe i guess
         if column in {"book_ID", "name", "ISBN_num", "date", "description", "author_ID"}:
             column = "books."+column
         elif column in {"author_name"}:
