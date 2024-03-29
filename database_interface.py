@@ -1,8 +1,24 @@
+"""
+provides access to a configured database via a DataBase object
+
+Fields and table names are stored in the following constants
+    AUTHOR_TABLE: Final[str]
+    AUTHOR_FIELDS: Final[Tuple[str]]
+
+    BOOKS_TABLE: Final[str]
+    BOOKS_FIELDS: Final[Tuple[str]]
+
+    STOCK_TABLE: Final[str]
+    STOCK_FIELDS: Final[Tuple[str]]
+
+A BOOK_FIELD: Final[Enum] is provided for easier access to the book fields.
+
+This accesses or creates a database called database.db
+"""
 import sqlite3
 from typing import Final, Tuple, List, Dict
 from enum import Enum
 import re
-
 
 def regexp(expr, item):
     item = str(item)

@@ -1,3 +1,8 @@
+"""provides a GUI interface for the SQLlite database
+
+Usage: python GUI.py
+"""
+
 import database_interface
 import tkinter as tk
 import re  # used to validate user input
