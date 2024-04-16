@@ -124,8 +124,8 @@ class DataBase:
             new_description: the new value"""
         if column not in {"name", "ISBN_num", "date", "description", "author_ID"}:  # this counts as sqlinjection safe i guess
             raise Exception("Please enter a valid column name")
-        self.cur.execute(f"UPDATE books SET {
-                         column} = ? WHERE book_ID = ?", (new_description, book_ID))
+        self.cur.execute(f"""UPDATE books SET {
+                         column} = ? WHERE book_ID = ?""", (new_description, book_ID))
         self.con.commit()
 
     def check_status(self) -> List[str]:
